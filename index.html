@@ -193,41 +193,63 @@ textarea.inp{min-height:76px;resize:vertical}
 .sumr.big{font-weight:700;font-size:17px}
 .print{background:#fff;color:#000;border:1px solid var(--ln);border-radius:8px;padding:28px;max-width:680px;width:100%;margin:0 auto}
 /* login */
-.login{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);overflow:auto;background:#F8FAF8;padding:20px;gap:20px}
-.login-art{position:relative;isolation:isolate;min-height:700px;border-radius:20px;overflow:hidden;background:#102A20;color:#fff;display:flex;flex-direction:column;padding:44px;justify-content:space-between}
-.login-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 52%;z-index:-2}
-.login-art:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(5,28,20,.76) 0%,rgba(5,28,20,.25) 31%,transparent 56%,rgba(5,28,20,.16) 76%,rgba(5,28,20,.8) 100%)}
-.login-identity{display:flex;align-items:center;gap:10px;color:#E4EEE3;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase}
-.login-identity .logo{width:28px;height:28px}
-.login-title{font-size:clamp(54px,5.2vw,84px);font-weight:600;line-height:1.08;letter-spacing:-.055em;margin-top:22px!important}
-.login-description{font-size:clamp(18px,1.7vw,25px);font-weight:400;line-height:1.4;color:#E2ECDC;margin-top:12px!important;max-width:360px;letter-spacing:-.02em}
-.login-bottom{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin-top:320px}
-.login-badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:500;padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.3);background:rgba(10,32,23,.34);color:#F6FAF4;backdrop-filter:blur(8px)}
-.login-badge:before{content:"";width:6px;height:6px;border-radius:50%;background:#C4DFA7}
-.login-caption{font-size:13px;color:#E8EFE5;line-height:1.5;max-width:330px}
-.login-card{min-width:0;display:flex;align-items:center;justify-content:center;padding:40px 32px}
-.lc{width:100%;max-width:400px;display:flex;flex-direction:column;gap:17px}
+.login{--ink:#1A2B24;--mut:#566860;--ln:#D8D5C8;--pri:#1F4A3A;--prid:#163829;--g:#1F4A3A;--gd:#163829;--paper:#F7F5EF;--sage:#E8EFE5;--sage-h:#DCE7D8;--sage-ln:#C3D4BF;--field:#7F8C83;--pad:12px;position:relative;flex:1;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1fr);overflow:auto;background:var(--paper);color:var(--ink);padding:var(--pad);gap:var(--pad)}
+.login .login-hero{position:relative;display:flex;flex-direction:column;min-width:0}
+.login .login-brand{--tile:#fff;--mark:#1F4A3A;position:absolute;z-index:2;top:28px;left:32px;display:flex;align-items:center;gap:10px;color:#fff}
+.login .login-brand .logo{width:32px;height:32px}
+.login .login-brand .logo rect{fill:var(--tile)}
+.login .login-brand .logo path{stroke:var(--mark)}
+.login .login-brand .logo circle{fill:var(--mark)}
+.login .login-brand-name{font-size:19px;font-weight:600;line-height:1;letter-spacing:-.01em}
+.login .login-art{position:relative;isolation:isolate;flex:1;min-height:640px;border-radius:20px;overflow:hidden;background:#12261D;color:#fff;padding:84px 32px 32px}
+.login .login-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 32%;z-index:-2}
+.login .login-art:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(8,24,17,.55) 0,rgba(8,24,17,0) 36%)}
+.login .login-tagline{font-size:clamp(24px,2.1vw,30px);font-weight:600;line-height:1.2;letter-spacing:-.02em;text-wrap:balance}
+.login .login-sub{font-size:15px;line-height:1.5;color:#E3EBDF;margin-top:8px}
+.login .login-card{min-width:0;display:flex;align-items:center;justify-content:center;padding:32px 24px}
+.login .lc{width:100%;max-width:420px;display:flex;flex-direction:column;gap:20px}
 .login .lc.card{background:transparent;border:0;border-radius:0;padding:0!important}
-.login-eyebrow{color:#687A6B;font-size:10px;font-weight:700;letter-spacing:.17em;margin-bottom:12px!important;text-transform:uppercase}
-.login-heading{font-size:32px;font-weight:600;letter-spacing:-.045em;line-height:1.2;margin-bottom:8px!important;color:#182B24}
-.login .lc .sub{font-size:13px;line-height:1.6;color:#63736B}
-.login .lc .lbl{font-size:12px;font-weight:600;color:#34483D;margin-bottom:7px}
-.login .lc .inp{background:#fff;border-color:#CDD8D0;border-radius:9px;min-height:46px;font-size:13px;padding:11px 13px;box-shadow:0 1px 2px rgba(13,43,25,.025)}
-.login .lc .inp:focus{border-color:#426F55;outline:3px solid rgba(66,111,85,.12);outline-offset:0}
-.login .lc .inp.bad{border-color:var(--dng)}
-.login .lc .btn{font-size:12px;min-height:44px;border-radius:9px;border-color:#D3DDD5;background:#fff}
-.login .lc .btn.pri{background:#204F3D;border-color:#204F3D;color:#fff;min-height:46px;font-size:13px;box-shadow:0 3px 7px rgba(25,69,47,.09)}
-.login .lc .btn.pri:hover{background:#153D2D}
-.login .lc .lnk{font-size:12px;color:#3E6550;font-weight:500}
-.login .lc .demo-box{border:0;border-top:1px solid #DFE6DF;border-radius:0;background:none;padding:22px 0 0;margin-top:4px;gap:8px}
-.login .lc .demo-box .h3{font-size:13px;font-weight:600;color:#34483D}
-.login .lc .demo-box .sub{font-size:12px;margin-bottom:5px}
-.login .lc .demo-box .btn{justify-content:space-between;text-align:left;padding:0 14px}
-.login .lc .demo-box .btn:after{content:"";width:6px;height:6px;border-top:1.5px solid #658171;border-right:1.5px solid #658171;transform:rotate(45deg);margin-right:3px;flex:none}
-.login .lc .demo-box .btn:hover{border-color:#8FAC96;background:#F0F5EF}
-.login-footnote{font-size:10px;line-height:1.6;color:#78857C;text-align:center;margin-top:6px!important}
-@media(min-width:1700px){.login{padding:24px max(24px,calc((100vw - 1640px)/2));gap:36px}.login-art{padding:48px}}
-@media(max-width:1000px) and (min-width:761px){.login{padding:14px;gap:12px;grid-template-columns:minmax(0,.95fr) minmax(0,1fr)}.login-art{padding:28px;min-height:700px}.login-card{padding:32px 18px}.login-title{font-size:54px}.login-description{font-size:20px}}
+.login .login-pill{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;line-height:1;padding:7px 12px;border-radius:999px;background:var(--sage);color:var(--gd);border:1px solid var(--sage-ln)}
+.login .login-pill:before{content:"";width:6px;height:6px;border-radius:50%;background:#B7822F;flex:none}
+.login .login-head{display:flex;flex-direction:column;gap:8px}
+.login .login-heading{font-size:28px;font-weight:600;line-height:1.2;letter-spacing:-.025em;color:var(--ink)}
+.login .lc .sub{font-size:15px;line-height:1.5;color:var(--mut);text-wrap:pretty}
+.login .demo-box{display:flex;flex-direction:column;gap:8px;border:0;border-radius:0;background:none;padding:0}
+.login .demo-t{font-size:13px;font-weight:600;color:var(--mut);margin-bottom:2px}
+.login .role{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 16px;border:1px solid var(--sage-ln);border-radius:12px;background:var(--sage);cursor:pointer;text-align:left;color:var(--ink);transition:background-color .15s,border-color .15s}
+.login .role:hover{background:var(--sage-h);border-color:#A5BCA0}
+.login .role-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.login .role-t{font-size:15px;font-weight:600;line-height:1.3}
+.login .role-d{font-size:13px;line-height:1.35;color:var(--mut)}
+.login .role:after{content:"";margin-left:auto;width:8px;height:8px;border-top:2px solid var(--g);border-right:2px solid var(--g);transform:rotate(45deg);flex:none}
+.login .login-or{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--mut)}
+.login .login-or:before,.login .login-or:after{content:"";flex:1;height:1px;background:var(--ln)}
+.login .login-form{display:flex;flex-direction:column;gap:16px}
+.login .lbl{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.login .inp{min-height:48px;padding:0 14px;font-size:15px;border:1px solid var(--field);border-radius:10px;background:#fff;color:var(--ink)}
+.login .inp::placeholder{color:#6F7C74}
+.login .inp:hover{border-color:#5D6C63}
+.login .inp:focus,.login .inp:focus-visible{border-color:var(--g);outline:2px solid var(--g);outline-offset:1px}
+.login .inp.bad{border-color:var(--dng);box-shadow:0 0 0 1px var(--dng)}
+.login .inp.bad:focus,.login .inp.bad:focus-visible{outline-color:var(--dng)}
+.login .er{font-size:13px;font-weight:500;line-height:1.4;margin-top:6px}
+.login .pw{position:relative}
+.login .pw .inp{padding-right:92px}
+.login .pw-t{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-height:36px;padding:0 12px;border:0;border-radius:7px;background:none;color:var(--g);font-size:14px;font-weight:600;cursor:pointer}
+.login .pw-t:hover{background:var(--sage)}
+.login .btn{min-height:48px;padding:0 16px;font-size:15px;border-radius:10px;border-color:var(--field);background:#fff}
+.login .btn:hover{background:var(--sage)}
+.login .btn.pri{background:var(--g);border-color:var(--g);color:#fff}
+.login .btn.pri:hover{background:var(--gd);border-color:var(--gd)}
+.login .lnk{align-self:center;font-size:14px;font-weight:600;color:var(--g);min-height:32px}
+.login .lnk.back:before{content:"←";font-weight:500}
+.login .note{font-size:14px;line-height:1.45;border-radius:10px}
+.login .login-footnote{font-size:12px;line-height:1.5;color:var(--mut);text-wrap:pretty}
+.login .lc :focus-visible{outline:2px solid var(--g);outline-offset:2px}
+.login .lc .inp:focus-visible{outline-offset:1px}
+@media(max-height:820px) and (min-width:761px){.login .login-card{padding:8px 24px}.login .lc{gap:16px}.login .login-form{gap:14px}.login .role{min-height:56px;padding:8px 16px}.login .inp,.login .btn{min-height:44px}.login .login-heading{font-size:26px}.login .login-art{min-height:560px}}
+@media(min-width:1700px){.login{--pad:16px;padding:16px max(16px,calc((100vw - 1640px)/2))}}
+@media(max-width:1000px) and (min-width:761px){.login .login-art{padding:84px 24px 24px;min-height:600px}.login .login-brand{left:24px}.login .login-sub{display:none}.login .login-card{padding:24px 12px}.login .login-heading{font-size:26px}}
 .sk{background:linear-gradient(90deg,#E8EDF0,#F4F7F8,#E8EDF0);border-radius:6px;height:14px}
 @media (max-width:1100px){
   .side{width:212px}
@@ -257,18 +279,20 @@ textarea.inp{min-height:76px;resize:vertical}
   .sline{grid-template-columns:1fr 1fr}
   .sline .cap{display:block}
   .sline .ld{grid-column:1/-1}
-  .login{display:flex;flex-direction:column;padding:12px;gap:0;overflow:auto}
-  .login-art{flex:none;min-height:0;height:430px;padding:24px;border-radius:16px}
-  .login-photo{object-position:50% 0%}
-  .login-identity{font-size:9px;gap:8px;letter-spacing:.13em}
-  .login-identity .logo{width:22px;height:22px}
-  .login-title{font-size:46px;margin-top:12px!important}
-  .login-description{font-size:17px;max-width:240px;margin-top:6px!important}
-  .login-bottom{margin-top:0;gap:8px}
-  .login-caption{display:none}
-  .login-badge{font-size:10px;padding:5px 9px}
-  .login-card{flex:none;padding:32px 16px 20px;align-items:flex-start}
-  .login-heading{font-size:28px}
+  .login{display:flex;flex-direction:column;padding:0;gap:0}
+  .login .login-hero{flex:none}
+  .login .login-brand{--tile:#1F4A3A;--mark:#fff;position:static;color:var(--ink);padding:14px 16px 12px}
+  .login .login-brand .logo{width:28px;height:28px}
+  .login .login-brand-name{font-size:18px}
+  .login .login-art{flex:none;min-height:0;height:clamp(150px,min(56vw,26vh),300px);margin:0 12px;padding:0;border-radius:16px}
+  .login .login-art:after{display:none}
+  .login .login-photo{object-position:50% 45%}
+  .login .login-copy{display:none}
+  .login .login-card{flex:none;padding:16px 16px 32px;align-items:flex-start}
+  .login .lc{gap:18px}
+  .login .lc{max-width:480px;margin:0 auto}
+  .login .login-heading{font-size:24px}
+  .login .inp{font-size:16px}
   .kpi-v{font-size:25px}
 }
 @media print{
@@ -282,55 +306,59 @@ textarea.inp{min-height:76px;resize:vertical}
 
 <sc-if value="{{vw.login}}" hint-placeholder-val="{{ true }}">
 <div class="login">
-  <section class="login-art">
-    <img class="login-photo" src="./assets/nexovet-pets.webp" alt="Un pastor alemán, un golden retriever, un caniche y un gato gris en un jardín" width="1024" height="1536" fetchpriority="high">
-    <div>
-    <div class="login-identity">
+  <section class="login-hero">
+    <header class="login-brand">
       <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#fff"></rect><path d="M12 24c0-4 3-7 8-7s8 3 8 7-3 6-8 6-8-2-8-6z" fill="none" stroke="#0A474D" stroke-width="2.2"></path><circle cx="13.5" cy="14" r="2.2" fill="#0A474D"></circle><circle cx="20" cy="11.5" r="2.2" fill="#0A474D"></circle><circle cx="26.5" cy="14" r="2.2" fill="#0A474D"></circle></svg>
-      <span>Gestión veterinaria, más simple</span>
-    </div>
-    <h1 class="login-title">NexoVet</h1>
-    <p class="login-description">Gestión para veterinarias<br>y pet shops.</p>
-    </div>
-    <div class="login-bottom">
-      <p class="login-caption">Más tiempo para cuidar.<br>Todo lo demás, en orden.</p>
-      <span class="login-badge">Demo · Datos ficticios</span>
+      <h1 class="login-brand-name">NexoVet</h1>
+    </header>
+    <div class="login-art">
+      <img class="login-photo" src="./assets/nexovet-pets.webp" alt="Un pastor alemán, un golden retriever, un caniche y un gato gris en un jardín" width="1024" height="1536" fetchpriority="high">
+      <div class="login-copy">
+        <p class="login-tagline">Gestión para veterinarias y pet shops</p>
+        <p class="login-sub">Más tiempo para cuidar. Todo lo demás, en orden.</p>
+      </div>
     </div>
   </section>
-  <section class="login-card">
+  <section class="login-card" aria-label="Acceso a NexoVet">
     <div class="lc card" style="padding:26px">
+      <span class="login-pill">Demo · Datos ficticios</span>
       <sc-if value="{{lg.isLogin}}" hint-placeholder-val="{{ true }}">
-        <div><p class="login-eyebrow">Bienvenido a NexoVet</p><h2 class="login-heading">Todo listo para cuidar.</h2><p class="sub">Ingresa a tu espacio de trabajo.</p></div>
+        <div class="login-head"><h2 class="login-heading">Bienvenido a NexoVet</h2><p class="sub">Recorre el sistema con datos de ejemplo. No necesitas una cuenta.</p></div>
         <sc-if value="{{lg.expired}}"><div class="note warn" role="alert"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ico.clock}}"></path></svg><span>Tu sesión expiró por inactividad. Vuelve a ingresar para continuar donde estabas.</span></div></sc-if>
-        <sc-if value="{{lg.error}}"><div class="note bad" role="alert"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ico.alert}}"></path></svg><span>{{lg.error}}</span></div></sc-if>
-        <div class="fld"><label class="lbl" for="lg-email">Correo electrónico</label><input id="lg-email" class="inp {{cls.email}}" type="email" autocomplete="username" placeholder="nombre@example.com" value="{{f.email}}" onInput="{{h.email}}">
-          <sc-if value="{{err.email}}"><div class="er">{{err.email}}</div></sc-if></div>
-        <div class="fld"><label class="lbl" for="lg-pass">Contraseña</label>
-          <div class="row" style="flex-wrap:nowrap"><input id="lg-pass" class="inp {{cls.pass}}" type="{{lg.pwType}}" autocomplete="current-password" value="{{f.pass}}" onInput="{{h.pass}}"><button class="btn" type="button" onClick="{{lg.togglePw}}" aria-pressed="{{lg.pwShown}}">{{lg.pwLabel}}</button></div>
-          <sc-if value="{{err.pass}}"><div class="er">{{err.pass}}</div></sc-if></div>
-        <button class="btn pri" onClick="{{lg.submit}}">Ingresar</button>
-        <button class="lnk" onClick="{{lg.toRecover}}">Olvidé mi contraseña</button>
-        <div class="demo-box">
-          <strong class="h3">Conoce NexoVet por dentro</strong>
-          <p class="sub">Explora la demo. No necesitas una cuenta.</p>
-          <button class="btn" onClick="{{lg.asAdmin}}">Explorar como administrador</button>
-          <button class="btn" onClick="{{lg.asRec}}">Explorar como recepción</button>
-          <button class="btn" onClick="{{lg.asVet}}">Explorar como veterinario</button>
+        <div class="demo-box" role="group" aria-labelledby="demo-title">
+          <p class="demo-t" id="demo-title">Elige un rol para explorar la demo</p>
+          <button class="role" onClick="{{lg.asAdmin}}"><span class="role-tx"><span class="role-t">Explorar como administrador</span><span class="role-d">Acceso completo, incluye reportes</span></span></button>
+          <button class="role" onClick="{{lg.asRec}}"><span class="role-tx"><span class="role-t">Explorar como recepción</span><span class="role-d">Agenda, clientes, inventario y ventas</span></span></button>
+          <button class="role" onClick="{{lg.asVet}}"><span class="role-tx"><span class="role-t">Explorar como veterinario</span><span class="role-d">Agenda, mascotas y seguimiento</span></span></button>
+        </div>
+        <div class="login-or"><span>o ingresa con tu cuenta</span></div>
+        <div class="login-form">
+          <sc-if value="{{lg.error}}"><div class="note bad" role="alert"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ico.alert}}"></path></svg><span>{{lg.error}}</span></div></sc-if>
+          <div class="fld"><label class="lbl" for="lg-email">Correo electrónico</label><input id="lg-email" class="inp {{cls.email}}" type="email" autocomplete="username" placeholder="nombre@example.com" value="{{f.email}}" onInput="{{h.email}}" onKeyDown="{{lg.keyLogin}}" aria-invalid="{{lg.invEmail}}" aria-describedby="lg-email-err">
+            <sc-if value="{{err.email}}"><div class="er" id="lg-email-err">{{err.email}}</div></sc-if></div>
+          <div class="fld"><label class="lbl" for="lg-pass">Contraseña</label>
+            <div class="pw"><input id="lg-pass" class="inp {{cls.pass}}" type="{{lg.pwType}}" autocomplete="current-password" value="{{f.pass}}" onInput="{{h.pass}}" onKeyDown="{{lg.keyLogin}}" aria-invalid="{{lg.invPass}}" aria-describedby="lg-pass-err"><button class="pw-t" type="button" onClick="{{lg.togglePw}}" aria-label="{{lg.pwAria}}">{{lg.pwLabel}}</button></div>
+            <sc-if value="{{err.pass}}"><div class="er" id="lg-pass-err">{{err.pass}}</div></sc-if></div>
+          <button class="btn pri" onClick="{{lg.submit}}">Ingresar</button>
+          <button class="lnk" onClick="{{lg.toRecover}}">Olvidé mi contraseña</button>
         </div>
       </sc-if>
       <sc-if value="{{lg.isRecover}}" hint-placeholder-val="{{ false }}">
-        <div><h2 class="h1" style="font-size:22px">Recuperar contraseña</h2><p class="sub">Escribe tu correo y te indicaremos los pasos.</p></div>
-        <div class="fld"><label class="lbl" for="rc-email">Correo electrónico</label><input id="rc-email" class="inp {{cls.email}}" type="email" value="{{f.email}}" onInput="{{h.email}}">
-          <sc-if value="{{err.email}}"><div class="er">{{err.email}}</div></sc-if></div>
-        <button class="btn pri" onClick="{{lg.sendRecover}}">Enviar instrucciones</button>
-        <button class="lnk" onClick="{{lg.toLogin}}">Volver a ingresar</button>
+        <div class="login-head"><h2 class="login-heading">Recuperar contraseña</h2><p class="sub">Escribe tu correo y te indicaremos los pasos.</p></div>
+        <div class="login-form">
+          <div class="fld"><label class="lbl" for="rc-email">Correo electrónico</label><input id="rc-email" class="inp {{cls.email}}" type="email" autocomplete="email" placeholder="nombre@example.com" value="{{f.email}}" onInput="{{h.email}}" onKeyDown="{{lg.keyRecover}}" aria-invalid="{{lg.invEmail}}" aria-describedby="rc-email-err">
+            <sc-if value="{{err.email}}"><div class="er" id="rc-email-err">{{err.email}}</div></sc-if></div>
+          <button class="btn pri" onClick="{{lg.sendRecover}}">Enviar instrucciones</button>
+          <button class="lnk back" onClick="{{lg.toLogin}}">Volver a ingresar</button>
+        </div>
       </sc-if>
       <sc-if value="{{lg.isSent}}" hint-placeholder-val="{{ false }}">
+        <div class="login-head"><h2 class="login-heading">Revisa tu correo</h2></div>
         <div class="note ok" role="status"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ico.check}}"></path></svg><span>Si el correo corresponde a una cuenta del personal, recibirás instrucciones para restablecer tu contraseña. Revisa también la carpeta de spam.</span></div>
         <p class="sub">Simulación: en este prototipo no se envía ningún correo real.</p>
         <button class="btn" onClick="{{lg.toLogin}}">Volver a ingresar</button>
       </sc-if>
-      <p class="login-footnote">Entorno de demostración con datos ficticios.</p>
+      <p class="login-footnote">Entorno de demostración con datos ficticios. No ingreses información real.</p>
     </div>
   </section>
 </div>
@@ -1805,7 +1833,8 @@ class Component extends DCLogic {
       atencion: s.authed && v === 'atencion', producto: s.authed && v === 'producto', compra: s.authed && v === 'compra', venta: s.authed && v === 'venta', nuevaventa: s.authed && v === 'nuevaventa' && !!s.ns, resumen: s.authed && v === 'resumen' };
 
     /* --- login --- */
-    out.lg = { isLogin: s.lgMode === 'login', isRecover: s.lgMode === 'recover', isSent: s.lgMode === 'sent', expired: s.expired, error: s.lgErr, pwType: s.showPwd ? 'text' : 'password', pwShown: s.showPwd, pwLabel: s.showPwd ? 'Ocultar' : 'Mostrar',
+    out.lg = { isLogin: s.lgMode === 'login', isRecover: s.lgMode === 'recover', isSent: s.lgMode === 'sent', expired: s.expired, error: s.lgErr, pwType: s.showPwd ? 'text' : 'password', pwShown: s.showPwd, pwLabel: s.showPwd ? 'Ocultar' : 'Mostrar', pwAria: s.showPwd ? 'Ocultar contraseña' : 'Mostrar contraseña', invEmail: err.email ? 'true' : 'false', invPass: err.pass ? 'true' : 'false',
+      keyLogin: e => { if (e.key === 'Enter') { e.preventDefault(); this.submitLogin(); } }, keyRecover: e => { if (e.key === 'Enter') { e.preventDefault(); this.sendRecover(); } },
       togglePw: mutf(n => { n.showPwd = !n.showPwd; }), submit: () => this.submitLogin(), toRecover: mutf(n => { n.lgMode = 'recover'; n.err = {}; }), toLogin: mutf(n => { n.lgMode = 'login'; n.err = {}; }),
       sendRecover: () => this.sendRecover(), asAdmin: () => this.enter('camila'), asRec: () => this.enter('luis'), asVet: () => this.enter('valeria'), toggleExpired: mutf(n => { n.expired = !n.expired; }),
       expiredLabel: s.expired ? 'Quitar el aviso de sesión expirada' : 'Ver el estado «sesión expirada»' };
