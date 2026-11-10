@@ -193,11 +193,41 @@ textarea.inp{min-height:76px;resize:vertical}
 .sumr.big{font-weight:700;font-size:17px}
 .print{background:#fff;color:#000;border:1px solid var(--ln);border-radius:8px;padding:28px;max-width:680px;width:100%;margin:0 auto}
 /* login */
-.login{flex:1;display:flex;flex-wrap:wrap;overflow:auto;background:var(--bg)}
-.login-art{flex:1 1 420px;padding:48px;background:var(--prid);color:#fff;display:flex;flex-direction:column;gap:18px;justify-content:center}
-.login-art .sub{color:#CDE6E8}
-.login-card{flex:1 1 420px;display:flex;align-items:center;justify-content:center;padding:32px}
-.lc{width:100%;max-width:430px;display:flex;flex-direction:column;gap:14px}
+.login{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);overflow:auto;background:#F8FAF8;padding:20px;gap:20px}
+.login-art{position:relative;isolation:isolate;min-height:700px;border-radius:20px;overflow:hidden;background:#102A20;color:#fff;display:flex;flex-direction:column;padding:44px;justify-content:space-between}
+.login-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 52%;z-index:-2}
+.login-art:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(5,28,20,.76) 0%,rgba(5,28,20,.25) 31%,transparent 56%,rgba(5,28,20,.16) 76%,rgba(5,28,20,.8) 100%)}
+.login-identity{display:flex;align-items:center;gap:10px;color:#E4EEE3;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase}
+.login-identity .logo{width:28px;height:28px}
+.login-title{font-size:clamp(54px,5.2vw,84px);font-weight:600;line-height:1.08;letter-spacing:-.055em;margin-top:22px!important}
+.login-description{font-size:clamp(18px,1.7vw,25px);font-weight:400;line-height:1.4;color:#E2ECDC;margin-top:12px!important;max-width:360px;letter-spacing:-.02em}
+.login-bottom{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin-top:320px}
+.login-badge{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:500;padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.3);background:rgba(10,32,23,.34);color:#F6FAF4;backdrop-filter:blur(8px)}
+.login-badge:before{content:"";width:6px;height:6px;border-radius:50%;background:#C4DFA7}
+.login-caption{font-size:13px;color:#E8EFE5;line-height:1.5;max-width:330px}
+.login-card{min-width:0;display:flex;align-items:center;justify-content:center;padding:40px 32px}
+.lc{width:100%;max-width:400px;display:flex;flex-direction:column;gap:17px}
+.login .lc.card{background:transparent;border:0;border-radius:0;padding:0!important}
+.login-eyebrow{color:#687A6B;font-size:10px;font-weight:700;letter-spacing:.17em;margin-bottom:12px!important;text-transform:uppercase}
+.login-heading{font-size:32px;font-weight:600;letter-spacing:-.045em;line-height:1.2;margin-bottom:8px!important;color:#182B24}
+.login .lc .sub{font-size:13px;line-height:1.6;color:#63736B}
+.login .lc .lbl{font-size:12px;font-weight:600;color:#34483D;margin-bottom:7px}
+.login .lc .inp{background:#fff;border-color:#CDD8D0;border-radius:9px;min-height:46px;font-size:13px;padding:11px 13px;box-shadow:0 1px 2px rgba(13,43,25,.025)}
+.login .lc .inp:focus{border-color:#426F55;outline:3px solid rgba(66,111,85,.12);outline-offset:0}
+.login .lc .inp.bad{border-color:var(--dng)}
+.login .lc .btn{font-size:12px;min-height:44px;border-radius:9px;border-color:#D3DDD5;background:#fff}
+.login .lc .btn.pri{background:#204F3D;border-color:#204F3D;color:#fff;min-height:46px;font-size:13px;box-shadow:0 3px 7px rgba(25,69,47,.09)}
+.login .lc .btn.pri:hover{background:#153D2D}
+.login .lc .lnk{font-size:12px;color:#3E6550;font-weight:500}
+.login .lc .demo-box{border:0;border-top:1px solid #DFE6DF;border-radius:0;background:none;padding:22px 0 0;margin-top:4px;gap:8px}
+.login .lc .demo-box .h3{font-size:13px;font-weight:600;color:#34483D}
+.login .lc .demo-box .sub{font-size:12px;margin-bottom:5px}
+.login .lc .demo-box .btn{justify-content:space-between;text-align:left;padding:0 14px}
+.login .lc .demo-box .btn:after{content:"";width:6px;height:6px;border-top:1.5px solid #658171;border-right:1.5px solid #658171;transform:rotate(45deg);margin-right:3px;flex:none}
+.login .lc .demo-box .btn:hover{border-color:#8FAC96;background:#F0F5EF}
+.login-footnote{font-size:10px;line-height:1.6;color:#78857C;text-align:center;margin-top:6px!important}
+@media(min-width:1700px){.login{padding:24px max(24px,calc((100vw - 1640px)/2));gap:36px}.login-art{padding:48px}}
+@media(max-width:1000px) and (min-width:761px){.login{padding:14px;gap:12px;grid-template-columns:minmax(0,.95fr) minmax(0,1fr)}.login-art{padding:28px;min-height:700px}.login-card{padding:32px 18px}.login-title{font-size:54px}.login-description{font-size:20px}}
 .sk{background:linear-gradient(90deg,#E8EDF0,#F4F7F8,#E8EDF0);border-radius:6px;height:14px}
 @media (max-width:1100px){
   .side{width:212px}
@@ -227,7 +257,18 @@ textarea.inp{min-height:76px;resize:vertical}
   .sline{grid-template-columns:1fr 1fr}
   .sline .cap{display:block}
   .sline .ld{grid-column:1/-1}
-  .login-art{padding:28px}
+  .login{display:flex;flex-direction:column;padding:12px;gap:0;overflow:auto}
+  .login-art{flex:none;min-height:0;height:430px;padding:24px;border-radius:16px}
+  .login-photo{object-position:50% 0%}
+  .login-identity{font-size:9px;gap:8px;letter-spacing:.13em}
+  .login-identity .logo{width:22px;height:22px}
+  .login-title{font-size:46px;margin-top:12px!important}
+  .login-description{font-size:17px;max-width:240px;margin-top:6px!important}
+  .login-bottom{margin-top:0;gap:8px}
+  .login-caption{display:none}
+  .login-badge{font-size:10px;padding:5px 9px}
+  .login-card{flex:none;padding:32px 16px 20px;align-items:flex-start}
+  .login-heading{font-size:28px}
   .kpi-v{font-size:25px}
 }
 @media print{
@@ -242,18 +283,24 @@ textarea.inp{min-height:76px;resize:vertical}
 <sc-if value="{{vw.login}}" hint-placeholder-val="{{ true }}">
 <div class="login">
   <section class="login-art">
-    <div class="row" style="gap:12px">
+    <img class="login-photo" src="./assets/nexovet-pets.webp" alt="Un pastor alemán, un golden retriever, un caniche y un gato gris en un jardín" width="1024" height="1536" fetchpriority="high">
+    <div>
+    <div class="login-identity">
       <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#fff"></rect><path d="M12 24c0-4 3-7 8-7s8 3 8 7-3 6-8 6-8-2-8-6z" fill="none" stroke="#0A474D" stroke-width="2.2"></path><circle cx="13.5" cy="14" r="2.2" fill="#0A474D"></circle><circle cx="20" cy="11.5" r="2.2" fill="#0A474D"></circle><circle cx="26.5" cy="14" r="2.2" fill="#0A474D"></circle></svg>
-      <div><strong style="font-size:22px">NexoVet</strong><div class="sub">Marca provisional</div></div>
+      <span>Gestión veterinaria, más simple</span>
     </div>
-    <h1 class="h1" style="font-size:34px;max-width:520px">De la cita a la atención, la venta y el seguimiento, en un solo lugar.</h1>
-    <p style="max-width:520px;color:#E3F1F2">Prototipo de gestión para una veterinaria pequeña con pet shop: agenda, clientes y mascotas, seguimiento, inventario, compras y ventas. Una sede, un almacén, acceso solo para el personal.</p>
-    <p class="demo-badge" style="align-self:flex-start"><svg class="ico sm" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ico.info}}"></path></svg>Demo · Datos ficticios</p>
+    <h1 class="login-title">NexoVet</h1>
+    <p class="login-description">Gestión para veterinarias<br>y pet shops.</p>
+    </div>
+    <div class="login-bottom">
+      <p class="login-caption">Más tiempo para cuidar.<br>Todo lo demás, en orden.</p>
+      <span class="login-badge">Demo · Datos ficticios</span>
+    </div>
   </section>
   <section class="login-card">
     <div class="lc card" style="padding:26px">
       <sc-if value="{{lg.isLogin}}" hint-placeholder-val="{{ true }}">
-        <div><h2 class="h1" style="font-size:22px">Ingresar</h2><p class="sub">Acceso para el personal de la veterinaria.</p></div>
+        <div><p class="login-eyebrow">Bienvenido a NexoVet</p><h2 class="login-heading">Todo listo para cuidar.</h2><p class="sub">Ingresa a tu espacio de trabajo.</p></div>
         <sc-if value="{{lg.expired}}"><div class="note warn" role="alert"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ico.clock}}"></path></svg><span>Tu sesión expiró por inactividad. Vuelve a ingresar para continuar donde estabas.</span></div></sc-if>
         <sc-if value="{{lg.error}}"><div class="note bad" role="alert"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="{{ico.alert}}"></path></svg><span>{{lg.error}}</span></div></sc-if>
         <div class="fld"><label class="lbl" for="lg-email">Correo electrónico</label><input id="lg-email" class="inp {{cls.email}}" type="email" autocomplete="username" placeholder="nombre@example.com" value="{{f.email}}" onInput="{{h.email}}">
@@ -264,12 +311,11 @@ textarea.inp{min-height:76px;resize:vertical}
         <button class="btn pri" onClick="{{lg.submit}}">Ingresar</button>
         <button class="lnk" onClick="{{lg.toRecover}}">Olvidé mi contraseña</button>
         <div class="demo-box">
-          <strong class="h3">Modo demostración</strong>
-          <p class="sub">Sin credenciales reales. Elige un rol para explorar el prototipo.</p>
+          <strong class="h3">Conoce NexoVet por dentro</strong>
+          <p class="sub">Explora la demo. No necesitas una cuenta.</p>
           <button class="btn" onClick="{{lg.asAdmin}}">Explorar como administrador</button>
           <button class="btn" onClick="{{lg.asRec}}">Explorar como recepción</button>
           <button class="btn" onClick="{{lg.asVet}}">Explorar como veterinario</button>
-          <button class="lnk" onClick="{{lg.toggleExpired}}">{{lg.expiredLabel}}</button>
         </div>
       </sc-if>
       <sc-if value="{{lg.isRecover}}" hint-placeholder-val="{{ false }}">
@@ -284,6 +330,7 @@ textarea.inp{min-height:76px;resize:vertical}
         <p class="sub">Simulación: en este prototipo no se envía ningún correo real.</p>
         <button class="btn" onClick="{{lg.toLogin}}">Volver a ingresar</button>
       </sc-if>
+      <p class="login-footnote">Entorno de demostración con datos ficticios.</p>
     </div>
   </section>
 </div>
