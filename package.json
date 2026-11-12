@@ -1,0 +1,31 @@
+{
+  "name": "nexovet",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "npm run build -w @nexovet/shared && concurrently -k -n api,web \"npm run dev -w @nexovet/api\" \"npm run dev -w @nexovet/web\"",
+    "build": "npm run build -w @nexovet/shared && npm run build -w @nexovet/api && npm run build -w @nexovet/web",
+    "typecheck": "npm run build -w @nexovet/shared && npm run typecheck --workspaces --if-present",
+    "test": "npm run build -w @nexovet/shared && npm run test -w @nexovet/api",
+    "test:db": "npm run test:db -w @nexovet/api",
+    "test:e2e": "playwright test",
+    "db:migrate": "npm run db:migrate -w @nexovet/api",
+    "db:seed": "npm run db:seed -w @nexovet/api",
+    "check": "npm run typecheck && npm test && npm run test:db && npm run build",
+    "format": "prettier --write apps packages tests docs *.json *.ts compose.yaml .github/workflows/application.yml",
+    "format:check": "prettier --check apps packages tests docs *.json *.ts compose.yaml .github/workflows/application.yml"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "concurrently": "^9.2.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3"
+  }
+}

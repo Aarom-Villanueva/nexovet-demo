@@ -1,0 +1,87 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { buildApp } from '../src/app.js';
+import { assertDevelopmentDatabase, parseConfig } from '../src/config.js';
+
+test('salud disponible; disponibilidad no expone el error de PostgreSQL', async () => {
+  const app = buildApp({
+    ready: async () => {
+      throw new Error('password=privado');
+    },
+    overview: async () => null,
+  });
+  try {
+    assert.equal((await app.inject('/api/health')).statusCode, 200);
+    const response = await app.inject('/api/ready');
+    assert.equal(response.statusCode, 503);
+    assert.deepEqual(response.json(), { status: 'unavailable' });
+    assert.doesNotMatch(response.body, /privado/);
+    assert.equal((await app.inject('/api/demo/overview')).statusCode, 404);
+  } finally {
+    await app.close();
+  }
+});
+test('vista previa no existe en producción y no se puede habilitar por accidente', async () => {
+  assert.throws(() =>
+    buildApp({
+      production: true,
+      enableDemo: true,
+      ready: async () => {},
+      overview: async () => null,
+    }),
+  );
+  const app = buildApp({ production: true, ready: async () => {}, overview: async () => null });
+  try {
+    assert.equal((await app.inject('/api/demo/overview')).statusCode, 404);
+  } finally {
+    await app.close();
+  }
+});
+test('base sin semilla y base desconectada no se sustituyen por datos inventados', async () => {
+  const app = buildApp({ enableDemo: true, ready: async () => {}, overview: async () => null });
+  try {
+    assert.equal((await app.inject('/api/demo/overview')).statusCode, 409);
+  } finally {
+    await app.close();
+  }
+  const unavailable = buildApp({
+    enableDemo: true,
+    ready: async () => {},
+    overview: async () => {
+      throw new Error('secreto');
+    },
+  });
+  try {
+    const result = await unavailable.inject('/api/demo/overview');
+    assert.equal(result.statusCode, 503);
+    assert.doesNotMatch(result.body, /secreto/);
+    assert.equal(result.headers['cache-control'], 'no-store');
+  } finally {
+    await unavailable.close();
+  }
+});
+test('configuración y semilla impiden producción y bases ajenas', () => {
+  assert.throws(() =>
+    parseConfig({
+      DATABASE_URL: 'postgres://u:p@localhost/db',
+      NODE_ENV: 'production',
+      ENABLE_DEMO: 'true',
+    }),
+  );
+  assert.throws(() => parseConfig({ DATABASE_URL: 'https://example.invalid' }));
+  assert.throws(() =>
+    assertDevelopmentDatabase({ DATABASE_URL: 'postgres://localhost/clientes_reales' }),
+  );
+  assert.throws(() =>
+    assertDevelopmentDatabase({
+      NODE_ENV: 'production',
+      DATABASE_URL: 'postgres://localhost/nexovet_dev',
+    }),
+  );
+  assert.doesNotThrow(() =>
+    assertDevelopmentDatabase({
+      NODE_ENV: 'test',
+      DATABASE_URL: 'postgres://localhost/nexovet_test',
+    }),
+  );
+});

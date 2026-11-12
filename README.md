@@ -1,5 +1,21 @@
 # NexoVet — Demo interactiva
 
+## Aplicación en desarrollo — bloques 1 y 2
+
+La nueva aplicación está en `apps/web` (React + TypeScript) y `apps/api`
+(Node.js + Fastify), con PostgreSQL en `database/`. Incluye migraciones,
+datos sintéticos y una vista previa de solo lectura conectada a PostgreSQL.
+La demo estática de esta carpeta continúa siendo la referencia visual publicada.
+
+- [Instalación y comandos](docs/DESARROLLO.md)
+- [Modelo de base de datos](docs/BASE-DE-DATOS.md)
+- [Plan de los diez bloques](docs/PLAN.md)
+
+Esta primera entrega todavía no implementa login, permisos ni operaciones
+comerciales reales. La vista previa de datos está deshabilitada en producción.
+
+---
+
 Prototipo de un sistema de gestión para veterinarias con pet shop.
 
 Incluye agenda, clientes, mascotas, seguimiento, inventario, compras, ventas, reportes y administración. Los botones «Explorar como…» permiten recorrer los roles de demostración.
