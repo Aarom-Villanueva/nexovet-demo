@@ -89,3 +89,13 @@ tablas de sesión y recuperación. El dominio del bloque 2 no se modifica.
 Las contraseñas usan scrypt; los tokens de sesión y recuperación se guardan
 como SHA-256 de un secreto aleatorio. Las reglas y operaciones de mantenimiento
 se documentan en [AUTENTICACION.md](AUTENTICACION.md).
+
+## Ampliación del bloque 4
+
+`003_clients_pets.sql` añade `version` y `updated_at` a clientes y mascotas.
+La API exige la versión leída para actualizar: incrementa el contador y audita
+el cambio en una misma transacción. Un conflicto devuelve 409, sin sobrescribir
+la ficha. Las claves únicas de documento y microchip existentes resuelven
+duplicados, incluso concurrentes. Los estados activos permiten archivo reversible
+sin eliminar relaciones ni historial. No se transfieren mascotas entre responsables.
+Detalles, contrato y validaciones en [CLIENTES-Y-MASCOTAS.md](CLIENTES-Y-MASCOTAS.md).

@@ -1,18 +1,21 @@
 # NexoVet — Demo interactiva
 
-## Aplicación en desarrollo — bloques 1 a 3
+## Aplicación en desarrollo — bloques 1 a 4
 
 La nueva aplicación está en `apps/web` (React + TypeScript) y `apps/api`
 (Node.js + Fastify), con PostgreSQL en `database/`. Incluye migraciones,
-datos sintéticos, consultas conectadas a PostgreSQL y autenticación real por rol.
+datos sintéticos, autenticación real por rol y registro, edición y búsqueda
+de clientes y mascotas conectados a PostgreSQL.
 La demo estática de esta carpeta continúa siendo la referencia visual publicada.
 
 - [Instalación y comandos](docs/DESARROLLO.md)
 - [Modelo de base de datos](docs/BASE-DE-DATOS.md)
+- [Clientes y mascotas](docs/CLIENTES-Y-MASCOTAS.md)
 - [Plan de los diez bloques](docs/PLAN.md)
 
 El bloque 3 añade login, sesiones, recuperación de contraseña y permisos en la API.
-Las operaciones de clientes, agenda, compras y ventas siguen en preparación.
+Clientes y mascotas tienen fichas, filtros, archivo reversible y paginación.
+Agenda operativa, compras y ventas siguen en preparación.
 Consulta [Autenticación](docs/AUTENTICACION.md) para crear accesos locales y configurar correo.
 
 ---

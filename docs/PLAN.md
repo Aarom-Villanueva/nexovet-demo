@@ -2,10 +2,10 @@
 
 | Bloque | Entrega                                                              | Estado de esta rama                                     |
 | ------ | -------------------------------------------------------------------- | ------------------------------------------------------- |
-| 1      | Estructura React/TypeScript, API Node, configuración y navegación    | Implementado; vista previa de solo lectura              |
+| 1      | Estructura React/TypeScript, API Node, configuración y navegación    | Implementado; aplicación conectada a PostgreSQL         |
 | 2      | PostgreSQL, migraciones, relaciones, restricciones y datos ficticios | Implementado; límites documentados en BASE-DE-DATOS.md  |
 | 3      | Login, sesiones, recuperación y autorización por rol                 | Implementado; correo local/SMTP y roles documentados    |
-| 4      | Registro/edición/búsqueda de clientes y mascotas                     | Pendiente; vista de muestra disponible                  |
+| 4      | Registro/edición/búsqueda de clientes y mascotas                     | Implementado; fichas, paginación y control de edición   |
 | 5      | Gestión de agenda y atención veterinaria                             | Pendiente; agenda de muestra disponible                 |
 | 6      | Seguimientos, recordatorios y registro de contactos                  | Pendiente; vista de muestra disponible                  |
 | 7      | Inventario, proveedores y recepción de compras                       | Pendiente; catálogo y stock de muestra disponibles      |

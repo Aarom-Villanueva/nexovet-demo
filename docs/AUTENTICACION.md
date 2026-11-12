@@ -2,8 +2,9 @@
 
 Implementa autenticación real en la aplicación `apps/`, separada de los botones
 de rol simulados del prototipo estático publicado en GitHub Pages. No incorpora
-registro público ni reserva pública de citas. Las consultas siguen siendo de
-solo lectura: la escritura de clientes y mascotas corresponde al bloque 4.
+registro público ni reserva pública de citas. El [bloque 4](CLIENTES-Y-MASCOTAS.md)
+añade escrituras de fichas para administrador y recepción, con verificación de
+rol, origen y CSRF en cada petición. Veterinario mantiene acceso de consulta.
 
 ## Probar localmente
 
@@ -28,14 +29,15 @@ recuperación, no volver a ejecutar el comando para sobrescribirla.
 
 ## Qué puede consultar cada rol
 
-| Consulta                                   | Administrador | Recepción | Veterinario |
-| ------------------------------------------ | ------------- | --------- | ----------- |
-| Resumen, agenda, mascotas y seguimientos   | Sí            | Sí        | Sí          |
-| Listado de clientes y sus correos          | Sí            | Sí        | No          |
-| Inventario y precios                       | Sí            | Sí        | No          |
-| Rutas de compras y ventas (en preparación) | Sí            | Sí        | No          |
-| Ruta de reportes (en preparación)          | Sí            | No        | No          |
-| Cuentas/roles del equipo                   | Sí            | No        | No          |
+| Consulta                                       | Administrador | Recepción | Veterinario |
+| ---------------------------------------------- | ------------- | --------- | ----------- |
+| Resumen, agenda, mascotas y seguimientos       | Sí            | Sí        | Sí          |
+| Listado de clientes y sus correos              | Sí            | Sí        | No          |
+| Registrar, editar y archivar clientes/mascotas | Sí            | Sí        | No          |
+| Inventario y precios                           | Sí            | Sí        | No          |
+| Rutas de compras y ventas (en preparación)     | Sí            | Sí        | No          |
+| Ruta de reportes (en preparación)              | Sí            | No        | No          |
+| Cuentas/roles del equipo                       | Sí            | No        | No          |
 
 Los veterinarios ven nombres de responsables vinculados a pacientes, pero no
 el listado de contactos ni los datos comerciales. El resumen de su API omite

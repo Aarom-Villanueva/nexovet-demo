@@ -15,7 +15,18 @@ export function buildApp(options: Options) {
     throw new Error('Vista previa prohibida en producción');
   const app = Fastify({
     logger: options.logger
-      ? { redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers["set-cookie"]'] }
+      ? {
+          redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers["set-cookie"]'],
+          // Las búsquedas pueden contener teléfonos, documentos o correos.
+          serializers: {
+            req: (request) => ({
+              method: request.method,
+              url: request.url?.split('?')[0],
+              hostname: request.hostname,
+              remoteAddress: request.ip,
+            }),
+          },
+        }
       : false,
     bodyLimit: 16384,
   });
@@ -25,6 +36,9 @@ export function buildApp(options: Options) {
     reply.header('Referrer-Policy', 'no-referrer');
   });
   app.get('/api/health', async () => ({ status: 'ok', service: 'nexovet-api' }));
+  app.setNotFoundHandler((_request, reply) =>
+    reply.code(404).send({ message: 'Ruta no disponible.' }),
+  );
   app.get('/api/ready', async (_request, reply) => {
     try {
       await options.ready();
