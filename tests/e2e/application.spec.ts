@@ -11,18 +11,28 @@ const database = new URL(databaseUrl).pathname.slice(1);
 const credentials: { accounts: Array<{ email: string; role: string; password: string }> } =
   JSON.parse(await readFile(`${root}/.local/demo-credentials-${database}.json`, 'utf8'));
 let agendaDoctor: { id: string; name: string; email: string };
+let clinicalUserId: string | undefined;
 test.beforeAll(async () => {
   const { default: pg } = await import('pg');
   const pool = new pg.Pool({ connectionString: databaseUrl });
   try {
     if (!(await pool.query('SELECT 1 FROM business_settings WHERE is_demo')).rowCount)
       throw new Error('E2E requiere una veterinaria ficticia');
-    const doctorEmail = credentials.accounts.find(
-      (account) => account.role === 'veterinarian',
-    )!.email;
+    // La agenda clínica usa un profesional propio de la suite. Los horarios
+    // próximos a "ahora" no deben competir con las citas de la semilla.
+    const { hashPassword } = await import('../../apps/api/src/auth/crypto');
+    const email = `e2e-clinical-${randomUUID()}@example.invalid`;
+    const password = `E2E-${randomUUID()}-${randomUUID()}`;
     agendaDoctor = (
-      await pool.query('SELECT id,name,email FROM users WHERE lower(email)=$1', [doctorEmail])
+      await pool.query(
+        "INSERT INTO users(name,email,role,password_hash,login_enabled) VALUES ($1,$2,'veterinarian',$3,true) RETURNING id,name,email",
+        [`Veterinario E2E ${randomUUID().slice(0, 8)}`, email, await hashPassword(password)],
+      )
     ).rows[0];
+    clinicalUserId = agendaDoctor.id;
+    const account = credentials.accounts.find((account) => account.role === 'veterinarian')!;
+    account.email = email;
+    account.password = password;
     // Aísla la repetición de la suite; no modifica límites de cuentas reales.
     const keys = credentials.accounts.map((account) =>
       createHash('sha256').update(`login:email:${account.email}`).digest('hex'),
@@ -242,6 +252,10 @@ test.afterAll(async () => {
   const { default: pg } = await import('pg');
   const pool = new pg.Pool({ connectionString: databaseUrl });
   try {
+    if (clinicalUserId)
+      await pool.query('UPDATE users SET active=false,login_enabled=false WHERE id=$1', [
+        clinicalUserId,
+      ]);
     // El libro de stock y las compras finalizadas no se borran. Los fixtures se
     // compensan y archivan; conservan trazabilidad sin alterar productos de la semilla.
     const actor = (await pool.query("SELECT id FROM users WHERE email='admin@example.invalid'"))

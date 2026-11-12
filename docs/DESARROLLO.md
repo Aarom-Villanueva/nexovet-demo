@@ -109,6 +109,8 @@ fichas de la semilla. La prueba concurrente deja
 asientos de prueba compensados en la base de test, sin modificar el saldo final.
 Las pruebas de inventario conservan su libro inmutable: compensan los saldos de
 sus productos propios y archivan las fichas; no borran documentos finalizados.
+Las pruebas de atención crean además un veterinario sintético por ejecución para
+no competir con citas de la semilla según la hora del día; se desactiva al terminar.
 El flujo de GitHub Actions ejecuta estas verificaciones en cada pull request.
 
 ```sh
