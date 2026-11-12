@@ -170,7 +170,12 @@ test('recuperación escribe en buzón privado local y el formulario cambia la co
   try {
     await page.goto('/');
     await page.getByRole('link', { name: '¿Olvidaste tu contraseña?' }).click();
+    await expect(page).toHaveURL(/\/recuperar$/);
+    await expect(
+      page.getByRole('heading', { name: 'Recupera tu acceso.', exact: true }),
+    ).toBeVisible();
     await page.getByLabel('Correo electrónico', { exact: true }).fill(email);
+    await expect(page.getByLabel('Correo electrónico', { exact: true })).toHaveValue(email);
     await page.getByRole('button', { name: 'Enviar enlace' }).click();
     await expect(page.getByRole('status')).toContainText('Si el correo tiene acceso habilitado');
     let mail: { to: string; url: string } | undefined;
