@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Route, Routes, useLocation, Link } from 'react-router-dom';
 import {
   Activity,
@@ -19,7 +19,8 @@ import {
   UsersRound,
   X,
 } from 'lucide-react';
-import type { DemoOverview } from '@nexovet/shared';
+import { canVisit, roleLabels, type DemoOverview, type AuthUser } from '@nexovet/shared';
+import { AuthProvider, LoginPage, useAuth } from './auth';
 import { useOverview } from './useOverview';
 import { Appointments, date, labels, money, SectionTitle, Status, Table } from './components';
 
@@ -40,7 +41,7 @@ function Overview({ data }: { data: DemoOverview }) {
     {
       label: 'Citas de hoy',
       value: data.totals.appointmentsToday,
-      detail: 'En la agenda de demostración',
+      detail: 'En tu agenda de hoy',
       icon: CalendarDays,
       color: 'teal',
     },
@@ -165,7 +166,72 @@ function ComingSoon({ title }: { title: string }) {
     </section>
   );
 }
+function UserAccounts() {
+  const auth = useAuth();
+  const [users, setUsers] = useState<Array<
+    AuthUser & { active: boolean; loginEnabled: boolean }
+  > | null>(null);
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch('/api/users', {
+      signal: controller.signal,
+      credentials: 'same-origin',
+      cache: 'no-store',
+    })
+      .then(async (response) => {
+        if (response.status === 401) auth.expire();
+        if (!response.ok) throw new Error('No disponible');
+        const value = await response.json();
+        if (!controller.signal.aborted) setUsers(value);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setError(true);
+      });
+    return () => controller.abort();
+  }, []);
+  return (
+    <section className="panel">
+      <SectionTitle
+        title="Accesos del equipo"
+        subtitle="Consulta los roles y accesos habilitados de tu equipo."
+      />
+      {error ? (
+        <p role="alert">No se pudieron consultar los accesos. Recarga la página para reintentar.</p>
+      ) : !users ? (
+        <p role="status">Cargando accesos…</p>
+      ) : (
+        <Table headers={['Nombre', 'Correo', 'Rol', 'Acceso']}>
+          {users.map((user) => (
+            <tr key={user.id}>
+              <td>{user.name}</td>
+              <td>{user.email}</td>
+              <td>{roleLabels[user.role]}</td>
+              <td>{user.active && user.loginEnabled ? 'Habilitado' : 'Deshabilitado'}</td>
+            </tr>
+          ))}
+        </Table>
+      )}
+    </section>
+  );
+}
 function DataViews({ data }: { data: DemoOverview }) {
+  const auth = useAuth();
+  const role = auth.session!.user.role;
+  const location = useLocation();
+  if (
+    navigation.some((item) => item.to === location.pathname) &&
+    !canVisit(role, location.pathname)
+  )
+    return (
+      <section className="panel empty" role="alert">
+        <h1>Acceso restringido</h1>
+        <p>Tu rol no tiene acceso a esta sección.</p>
+        <Link className="button" to="/">
+          Volver al resumen
+        </Link>
+      </section>
+    );
   return (
     <Routes>
       <Route path="/" element={<Overview data={data} />} />
@@ -185,23 +251,25 @@ function DataViews({ data }: { data: DemoOverview }) {
         path="/clientes"
         element={
           <>
-            <section className="panel">
-              <SectionTitle
-                title="Clientes"
-                subtitle="Muestra de clientes ficticios. Vista de consulta, sin edición."
-              />
-              <Table headers={['Nombre', 'Correo de ejemplo', 'Mascotas']}>
-                {data.clients.map((client) => (
-                  <tr key={client.id}>
-                    <td>
-                      <strong>{client.name}</strong>
-                    </td>
-                    <td>{client.email ?? 'Sin correo'}</td>
-                    <td>{client.pets}</td>
-                  </tr>
-                ))}
-              </Table>
-            </section>
+            {role !== 'veterinarian' && (
+              <section className="panel">
+                <SectionTitle
+                  title="Clientes"
+                  subtitle="Muestra de clientes ficticios. Vista de consulta, sin edición."
+                />
+                <Table headers={['Nombre', 'Correo de ejemplo', 'Mascotas']}>
+                  {data.clients.map((client) => (
+                    <tr key={client.id}>
+                      <td>
+                        <strong>{client.name}</strong>
+                      </td>
+                      <td>{client.email ?? 'Sin correo'}</td>
+                      <td>{client.pets}</td>
+                    </tr>
+                  ))}
+                </Table>
+              </section>
+            )}
             <section className="panel">
               <SectionTitle
                 title="Mascotas"
@@ -279,14 +347,66 @@ function DataViews({ data }: { data: DemoOverview }) {
           </section>
         }
       />
-      {navigation.slice(5).map((item) => (
-        <Route key={item.to} path={item.to} element={<ComingSoon title={item.label} />} />
-      ))}
+      <Route path="/administracion" element={<UserAccounts />} />
+      {navigation
+        .slice(5)
+        .filter((item) => item.to !== '/administracion')
+        .map((item) => (
+          <Route key={item.to} path={item.to} element={<ComingSoon title={item.label} />} />
+        ))}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 export function App() {
+  return (
+    <AuthProvider>
+      <AuthGateway />
+    </AuthProvider>
+  );
+}
+function AuthGateway() {
+  const auth = useAuth();
+  const location = useLocation();
+  if (auth.loading)
+    return (
+      <main className="auth-loading" role="status">
+        <span className="loader" />
+        <p>Preparando tu acceso…</p>
+      </main>
+    );
+  if (auth.unavailable)
+    return (
+      <main className="auth-loading" role="alert">
+        <h1>No pudimos conectar</h1>
+        <p>Intenta nuevamente en unos momentos.</p>
+        <button className="button" onClick={auth.reload}>
+          Intentar nuevamente
+        </button>
+      </main>
+    );
+  if (location.pathname === '/restablecer' || location.pathname === '/recuperar')
+    return <LoginPage key={location.pathname} />;
+  if (!auth.session) return <LoginPage key={location.pathname} />;
+  if (location.pathname === '/ingresar') return <Navigate to="/" replace />;
+  return <Workspace key={auth.session.user.id} />;
+}
+function Workspace() {
+  const auth = useAuth();
+  const user = auth.session!.user;
+  const [logoutError, setLogoutError] = useState('');
+  const [loggingOut, setLoggingOut] = useState(false);
+  async function logout() {
+    setLoggingOut(true);
+    setLogoutError('');
+    try {
+      await auth.logout();
+    } catch (error) {
+      setLogoutError((error as Error).message);
+    } finally {
+      setLoggingOut(false);
+    }
+  }
   const { data, error, loading, retry } = useOverview();
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
@@ -326,27 +446,40 @@ export function App() {
             <HeartPulse size={19} />
           </span>
           <div>
-            <strong>Veterinaria NexoVet</strong>
-            <small>Una sede · Lima, Perú</small>
+            <strong>{data?.businessName ?? 'Mi veterinaria'}</strong>
+            <small>Una sede · Perú</small>
           </div>
         </div>
         <span className="nav-label">TU VETERINARIA</span>
         <nav>
-          {navigation.map((item) => (
-            <NavLink key={item.to} to={item.to} end onClick={() => setMenuOpen(false)}>
-              <item.icon size={19} />
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
+          {navigation
+            .filter((item) => canVisit(user.role, item.to))
+            .map((item) => (
+              <NavLink key={item.to} to={item.to} end onClick={() => setMenuOpen(false)}>
+                <item.icon size={19} />
+                <span>
+                  {user.role === 'veterinarian' && item.to === '/clientes'
+                    ? 'Mascotas'
+                    : item.label}
+                </span>
+              </NavLink>
+            ))}
         </nav>
         <div className="sidebar-footer">
           <span className="preview-dot" />
           <div>
-            <strong>Vista previa</strong>
-            <small>Solo datos ficticios</small>
+            <strong>{user.name}</strong>
+            <small>{roleLabels[user.role]}</small>
           </div>
-          <PawPrint size={21} />
         </div>
+        <button className="logout-button" onClick={() => void logout()} disabled={loggingOut}>
+          {loggingOut ? 'Cerrando…' : 'Cerrar sesión'}
+        </button>
+        {logoutError && (
+          <p className="auth-error" role="alert">
+            {logoutError}
+          </p>
+        )}
       </aside>
       <div className="workspace">
         <header className="topbar">
@@ -368,12 +501,14 @@ export function App() {
             {today}
           </span>
         </header>
-        <div className="preview-banner">
-          <Activity size={15} />
-          <span>
-            Vista previa con datos ficticios · Solo consulta, sin acceso de usuarios reales.
-          </span>
-        </div>
+        {data?.demo && (
+          <div className="preview-banner">
+            <Activity size={15} />
+            <span>
+              Demostración con datos ficticios · Acceso por rol · Operaciones de consulta.
+            </span>
+          </div>
+        )}
         <main id="main" tabIndex={-1}>
           {loading ? (
             <div className="panel empty" role="status">
@@ -394,7 +529,7 @@ export function App() {
           )}
           <footer className="page-footer">
             <span>NexoVet · Hecho para cuidar</span>
-            <span>Vista previa · PEN · Hora de Lima</span>
+            <span>{data?.demo ? 'Demostración · ' : ''}PEN · Hora de Lima</span>
           </footer>
         </main>
       </div>

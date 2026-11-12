@@ -1,12 +1,41 @@
 export type Role = 'admin' | 'reception' | 'veterinarian';
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+}
+export interface AuthSession {
+  user: AuthUser;
+  csrfToken: string;
+}
+export const roleLabels: Record<Role, string> = {
+  admin: 'Administrador',
+  reception: 'Recepción',
+  veterinarian: 'Veterinario',
+};
+export const routeRoles: Record<string, readonly Role[]> = {
+  '/': ['admin', 'reception', 'veterinarian'],
+  '/agenda': ['admin', 'reception', 'veterinarian'],
+  '/clientes': ['admin', 'reception', 'veterinarian'],
+  '/seguimiento': ['admin', 'reception', 'veterinarian'],
+  '/inventario': ['admin', 'reception'],
+  '/compras': ['admin', 'reception'],
+  '/ventas': ['admin', 'reception'],
+  '/reportes': ['admin'],
+  '/administracion': ['admin'],
+};
+export function canVisit(role: Role, path: string) {
+  return routeRoles[path]?.includes(role) ?? false;
+}
 export interface DemoOverview {
-  demo: true;
+  demo: boolean;
   businessName: string;
   today: string;
   totals: {
     clients: number;
     pets: number;
-    products: number;
+    products: number | null;
     appointmentsToday: number;
     pendingTasks: number;
   };

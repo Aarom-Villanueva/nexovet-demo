@@ -4,7 +4,7 @@
 | ------ | -------------------------------------------------------------------- | ------------------------------------------------------- |
 | 1      | Estructura React/TypeScript, API Node, configuración y navegación    | Implementado; vista previa de solo lectura              |
 | 2      | PostgreSQL, migraciones, relaciones, restricciones y datos ficticios | Implementado; límites documentados en BASE-DE-DATOS.md  |
-| 3      | Login, sesiones, recuperación y autorización por rol                 | Pendiente                                               |
+| 3      | Login, sesiones, recuperación y autorización por rol                 | Implementado; correo local/SMTP y roles documentados    |
 | 4      | Registro/edición/búsqueda de clientes y mascotas                     | Pendiente; vista de muestra disponible                  |
 | 5      | Gestión de agenda y atención veterinaria                             | Pendiente; agenda de muestra disponible                 |
 | 6      | Seguimientos, recordatorios y registro de contactos                  | Pendiente; vista de muestra disponible                  |

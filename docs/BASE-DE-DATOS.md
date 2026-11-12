@@ -42,8 +42,8 @@ existir sin líneas. La obligatoriedad al confirmar se implementará en sus fluj
 
 - Un solo registro de configuración del negocio; moneda PEN y zona America/Lima.
 - UUID como identificadores; emails de usuario únicos sin distinguir mayúsculas.
-- No se guardan contraseñas en claro ni tokens de sesión en claro. Las tablas
-  reservan hashes; generación, revocación y autorización son del bloque 3.
+- No se guardan contraseñas en claro ni tokens de sesión en claro. El bloque 3
+  implementa generación, caducidad, revocación y autorización.
 - Una mascota pertenece a un cliente. El cliente de una cita se deriva de la
   mascota, evitando duplicar propietario en la cita. Transferencias de propietario
   e historial de esas transferencias quedan fuera del primer alcance.
@@ -54,8 +54,7 @@ existir sin líneas. La obligatoriedad al confirmar se implementará en sus fluj
   Intervalos `[inicio,fin)` permiten citas consecutivas. Canceladas y no asistidas
   no bloquean el horario. No es una agenda pública para dueños de mascotas.
 - Solo profesionales con rol veterinario y activos pueden ser asignados al
-  registrar/modificar una asignación clínica. Bloque 3 establecerá los permisos
-  de quien realiza esas operaciones; esta validación no sustituye autenticación.
+  registrar/modificar una asignación clínica. Las rutas del bloque 3 comprueban el rol de quien accede; esta validación no sustituye autenticación.
 - Una atención por cita. La consulta de antecedentes se deriva de la relación
   mascota → cita → atención, sin mantener una segunda historia duplicada.
 - Cantidades e importes con `numeric`, sin usar flotantes para dinero. Líneas
@@ -82,3 +81,11 @@ recordatorios enviados automáticamente, varias sedes ni separación de múltipl
 negocios. Antes de alojar varias veterinarias habrá que diseñar aislamiento de
 datos, autorización y migraciones específicas. Las tablas de vacunas y recetas
 no contienen recomendaciones clínicas predefinidas.
+
+## Ampliación del bloque 3
+
+`002_authentication.sql` añade `auth_rate_limits` e índices de caducidad a las
+tablas de sesión y recuperación. El dominio del bloque 2 no se modifica.
+Las contraseñas usan scrypt; los tokens de sesión y recuperación se guardan
+como SHA-256 de un secreto aleatorio. Las reglas y operaciones de mantenimiento
+se documentan en [AUTENTICACION.md](AUTENTICACION.md).

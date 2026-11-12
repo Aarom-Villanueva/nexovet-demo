@@ -10,6 +10,303 @@
   --line: #e6ece9;
   --muted: #748783;
 }
+.login-layout {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1.06fr 1fr;
+  background: #fbfcfa;
+}
+.login-story {
+  position: relative;
+  overflow: hidden;
+  min-height: 100dvh;
+  background: #153f36;
+  color: #fff;
+}
+.login-photo,
+.login-shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 59% center;
+}
+.login-shade {
+  background: linear-gradient(
+    180deg,
+    rgba(5, 35, 27, 0.35),
+    transparent 28%,
+    rgba(5, 35, 27, 0.15) 42%,
+    rgba(5, 35, 27, 0.94) 100%
+  );
+}
+.login-brand {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 42px 46px;
+  font-family: Manrope, sans-serif;
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+.login-brand > span {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border: 1px solid #ffffff60;
+  border-radius: 14px;
+  background: #ffffff15;
+}
+.login-story-copy {
+  position: absolute;
+  bottom: 8%;
+  left: 8%;
+  right: 8%;
+  max-width: 490px;
+}
+.login-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.6px;
+  color: #b7e2cd;
+}
+.login-story-copy h1 {
+  margin: 18px 0;
+  font-size: clamp(36px, 4.1vw, 62px);
+  line-height: 1.12;
+  letter-spacing: -2px;
+}
+.login-story-copy p {
+  max-width: 370px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #e1eee6;
+}
+.login-photo-caption {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 28px;
+  font-size: 11px;
+  color: #d7e8de;
+}
+.login-photo-caption > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c0e8a8;
+}
+.login-main {
+  position: relative;
+  padding: 75px 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-card {
+  width: 100%;
+  max-width: 390px;
+}
+.login-form-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: #e8f1e9;
+  color: #276654;
+  margin-bottom: 30px;
+}
+.login-card .eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  color: #678675;
+}
+.login-card h2 {
+  font-size: clamp(25px, 2.4vw, 32px);
+  line-height: 1.3;
+  letter-spacing: -1.1px;
+  margin: 12px 0;
+  color: #213e32;
+}
+.login-description {
+  font-size: 14px;
+  color: #6c7f75;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+.auth-field {
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  margin: 20px 0;
+  color: #334f40;
+}
+.auth-field input {
+  width: 100%;
+  display: block;
+  border: 1px solid #d8e2da;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fff;
+  color: #213e32;
+  outline: none;
+  margin-top: 9px;
+  min-width: 0;
+}
+.auth-field input:focus {
+  border-color: #548a70;
+  box-shadow: 0 0 0 3px #548a701a;
+}
+.auth-field input::placeholder {
+  color: #98a69d;
+}
+.password-field {
+  position: relative;
+}
+.password-field input {
+  padding-right: 52px;
+}
+.password-field button {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: 42px;
+  background: transparent;
+  color: #698572;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+}
+.auth-forgot {
+  display: block;
+  text-align: right;
+  font-size: 12px;
+  color: #2b7355;
+  margin: -4px 0 27px;
+}
+.auth-submit {
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 10px;
+  background: #226247;
+  margin-top: 8px;
+}
+.auth-submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.auth-error,
+.auth-notice {
+  font-size: 13px;
+  line-height: 1.6;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 15px 0;
+}
+.auth-error {
+  color: #8e302a;
+  background: #fff0ed;
+}
+.auth-notice {
+  color: #28573e;
+  background: #edf5e9;
+}
+.auth-error a {
+  text-decoration: underline;
+}
+.auth-back {
+  display: block;
+  margin: 20px 0;
+  font-size: 13px;
+  color: #286849;
+}
+.login-secure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 10px;
+  color: #819187;
+  margin-top: 32px;
+  padding-top: 25px;
+  border-top: 1px solid #e3e9e2;
+}
+.login-footer {
+  position: absolute;
+  bottom: 26px;
+  color: #8a9a90;
+  font-size: 10px;
+  letter-spacing: 0.2px;
+}
+.auth-loading {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 28px;
+  text-align: center;
+}
+.logout-button {
+  color: #215d4b;
+  background: #edf5f0;
+  padding: 11px;
+  border-radius: 8px;
+  width: 100%;
+  margin-top: 12px;
+  font-size: 12px;
+}
+@media (max-width: 760px) {
+  .login-layout {
+    display: block;
+  }
+  .login-story {
+    min-height: 260px;
+    height: 32dvh;
+    max-height: 340px;
+  }
+  .login-photo {
+    object-position: 55% 43%;
+  }
+  .login-brand {
+    padding: 20px 26px;
+    font-size: 24px;
+  }
+  .login-story-copy {
+    left: 26px;
+    bottom: 24px;
+  }
+  .login-story-copy h1 {
+    font-size: 27px;
+    margin: 6px 0;
+    letter-spacing: -0.8px;
+  }
+  .login-story-copy p,
+  .login-kicker,
+  .login-photo-caption {
+    display: none;
+  }
+  .login-main {
+    padding: 34px 26px 70px;
+  }
+  .login-form-icon {
+    display: none;
+  }
+  .login-card h2 {
+    font-size: 26px;
+  }
+  .login-description {
+    margin-bottom: 22px;
+  }
+}
 * {
   box-sizing: border-box;
 }
@@ -133,6 +430,10 @@ small {
 .sidebar nav {
   display: grid;
   gap: 5px;
+  align-content: start;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 .sidebar nav a {
   display: flex;
@@ -153,12 +454,19 @@ small {
   font-weight: 700;
 }
 .sidebar-footer {
-  margin-top: auto;
+  margin-top: 16px;
   padding: 21px 9px 1px;
   display: flex;
   align-items: center;
   gap: 10px;
   border-top: 1px solid var(--line);
+}
+.sidebar > .brand,
+.sidebar > .clinic,
+.sidebar > .nav-label,
+.sidebar-footer,
+.logout-button {
+  flex-shrink: 0;
 }
 .sidebar-footer strong {
   font-size: 11px;

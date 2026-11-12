@@ -2,6 +2,7 @@ import { parseConfig } from './config.js';
 import { createPool } from './db/pool.js';
 import { getDemoOverview } from './demo.js';
 import { buildApp } from './app.js';
+import { createMailer } from './auth/mail.js';
 const config = parseConfig(process.env);
 const pool = createPool(config.DATABASE_URL);
 const app = buildApp({
@@ -11,7 +12,8 @@ const app = buildApp({
   ready: async () => {
     await pool.query('SELECT 1 FROM business_settings LIMIT 1');
   },
-  overview: () => getDemoOverview(pool),
+  overview: (role) => getDemoOverview(pool, role),
+  auth: { pool, config, sendMail: createMailer(config) },
 });
 app.addHook('onClose', async () => {
   await pool.end();

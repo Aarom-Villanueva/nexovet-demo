@@ -37,27 +37,15 @@ test('vista previa no existe en producción y no se puede habilitar por accident
     await app.close();
   }
 });
-test('base sin semilla y base desconectada no se sustituyen por datos inventados', async () => {
+test('la ruta temporal pública fue retirada incluso en modo demostración', async () => {
   const app = buildApp({ enableDemo: true, ready: async () => {}, overview: async () => null });
   try {
-    assert.equal((await app.inject('/api/demo/overview')).statusCode, 409);
+    const result = await app.inject('/api/demo/overview');
+    assert.equal(result.statusCode, 404);
+    assert.equal(result.headers['cache-control'], 'no-store');
+    assert.equal(result.headers['referrer-policy'], 'no-referrer');
   } finally {
     await app.close();
-  }
-  const unavailable = buildApp({
-    enableDemo: true,
-    ready: async () => {},
-    overview: async () => {
-      throw new Error('secreto');
-    },
-  });
-  try {
-    const result = await unavailable.inject('/api/demo/overview');
-    assert.equal(result.statusCode, 503);
-    assert.doesNotMatch(result.body, /secreto/);
-    assert.equal(result.headers['cache-control'], 'no-store');
-  } finally {
-    await unavailable.close();
   }
 });
 test('configuración y semilla impiden producción y bases ajenas', () => {
