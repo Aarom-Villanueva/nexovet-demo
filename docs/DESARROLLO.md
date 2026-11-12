@@ -13,6 +13,7 @@ cp .env.example .env
 docker compose up -d --wait db
 npm run db:migrate
 npm run db:seed
+npm run auth:demo-users
 npm run dev
 ```
 
@@ -21,16 +22,19 @@ En PowerShell, `Copy-Item .env.example .env` equivale al comando `cp`.
 - Aplicación: http://localhost:5173
 - Salud de API: http://localhost:3001/api/health
 - Disponibilidad de base/migraciones: http://localhost:3001/api/ready
-- Vista previa: http://localhost:3001/api/demo/overview
+- Login: http://localhost:5173/ingresar
+- Resumen protegido: `/api/overview` (requiere cookie de sesión)
+- Accesos de desarrollo: archivo privado `.local/demo-credentials-nexovet_dev.json`
 
 Las credenciales de `.env.example` son exclusivamente locales. Compose publica
 PostgreSQL solo en `127.0.0.1`. No exponer esos valores ni usar ese Compose como
 configuración de producción. `.env` queda ignorado por Git.
 
-`ENABLE_DEMO=true` habilita una ruta temporal de solo lectura para desarrollo o
-pruebas. Además exige un negocio marcado `is_demo` en la base. Con
-`NODE_ENV=production`, activar la vista previa impide iniciar el servidor; sin
-activarla la ruta no existe. No debe cargarse información real en esta entrega.
+Todas las rutas de datos requieren autenticación. La antigua ruta pública
+`/api/demo/overview` se retiró. `ENABLE_DEMO` conserva la protección que impide
+arrancar producción con ese indicador; no permite saltarse el login.
+[Autenticación](AUTENTICACION.md) detalla sesiones, permisos, recuperación y SMTP.
+No cargar información real antes de completar y desplegar la aplicación.
 
 ## Qué puedes recorrer
 
@@ -39,19 +43,21 @@ La consulta llega a PostgreSQL a través de la API: no hay una respuesta simulad
 que esconda fallos de conexión. Si la API o la semilla no están disponibles, la
 interfaz muestra el error y permite reintentar.
 
-Compras, ventas, reportes y administración tienen rutas identificadas como «en
-preparación». No hay botones de escritura, login ni permisos de usuario todavía.
-Las tablas presentan muestras limitadas, no listados paginados completos. La
-autenticación del bloque 3 sustituirá el acceso temporal antes de exponer datos
-de una veterinaria. La demo antigua sigue abriendo desde GitHub Pages.
+Compras, ventas y reportes siguen «en preparación». Administración muestra
+las cuentas/roles, sin editar; solo la ve el administrador. El veterinario ve
+pacientes y agenda, sin correos de clientes, inventario ni precios. Las consultas
+presentan muestras limitadas; la edición y paginación se implementan por bloque.
+La demo estática antigua sigue abriendo desde GitHub Pages y sus accesos por rol
+son simulados: no son las cuentas de esta nueva aplicación.
 
 ## Datos ficticios
 
 `npm run db:seed` inserta 320 clientes, 400 mascotas, 320 productos, 320 saldos
 iniciales, 36 citas, 24 tareas, catálogos y borradores de compra/venta. Los correos
 usan `example.invalid` y no se generan teléfonos ni documentos de identidad.
-Las cuatro personas del personal tienen login deshabilitado y ningún hash de
-contraseña. No existen credenciales de acceso de prueba en este bloque.
+La semilla deja las cuatro cuentas sin acceso habilitado. `auth:demo-users` las
+habilita con contraseñas aleatorias privadas, solo en bases locales de demo.
+Repetir la semilla conserva hashes, roles y accesos existentes.
 
 La semilla usa identificadores estables e inserta solo filas ausentes. Repetirla
 no duplica filas ni reinicia datos existentes. Las citas nuevas se ubican desde
@@ -80,7 +86,10 @@ No necesitan permisos sobre una base real.
 
 `npm run check` ejecuta tipos, pruebas de API, pruebas con PostgreSQL real y la
 compilación de frontend/backend. Las pruebas de navegador comprueban navegación,
-lectura de datos, error/reintento y pantalla móvil. La prueba concurrente deja
+login, sesiones, roles, lectura de datos, recuperación, error/reintento y pantalla móvil.
+`test:e2e` prepara migraciones, semilla y accesos locales antes de ejecutar.
+Las pruebas de autenticación crean usuarios sintéticos; se desactivan al terminar
+y se conservan sus registros de auditoría. La prueba concurrente deja
 asientos de prueba compensados en la base de test, sin modificar el saldo final.
 El flujo de GitHub Actions ejecuta estas verificaciones en cada pull request.
 

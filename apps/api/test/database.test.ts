@@ -40,10 +40,13 @@ async function rejectWithCode(action: Promise<unknown>, code: string) {
       typeof error === 'object' && error !== null && 'code' in error && error.code === code,
   );
 }
-test('migrar y sembrar dos veces preserva filas, saldo y usuarios sin login', async () => {
+test('migrar y sembrar dos veces preserva filas, saldo y accesos existentes', async () => {
   const before = await pool.query(
     'SELECT (SELECT count(*) FROM clients) AS clients,(SELECT count(*) FROM pets) AS pets,(SELECT count(*) FROM stock_movements) AS movements,(SELECT sum(quantity) FROM product_stock) AS stock',
   );
+  const accessBefore = (
+    await pool.query('SELECT id,password_hash,login_enabled FROM users ORDER BY id')
+  ).rows;
   await migrate(pool);
   await seed(pool, testEnv);
   const after = await pool.query(
@@ -53,13 +56,9 @@ test('migrar y sembrar dos veces preserva filas, saldo y usuarios sin login', as
   assert.equal(before.rows[0].clients, '320');
   assert.equal(before.rows[0].pets, '400');
   assert.equal((await pool.query('SELECT count(*) FROM products')).rows[0].count, '320');
-  assert.equal(
-    (
-      await pool.query(
-        'SELECT count(*) FROM users WHERE login_enabled OR password_hash IS NOT NULL',
-      )
-    ).rows[0].count,
-    '0',
+  assert.deepEqual(
+    (await pool.query('SELECT id,password_hash,login_enabled FROM users ORDER BY id')).rows,
+    accessBefore,
   );
 });
 test('no se pueden registrar mascotas de un cliente inexistente', async () =>
@@ -224,34 +223,20 @@ test('dos salidas concurrentes no pueden consumir el mismo saldo', async () => {
       );
   }
 });
-test('API de vista previa lee PostgreSQL y respeta el contrato compartido', async () => {
+test('el resumen lee PostgreSQL y ya no expone una ruta pública', async () => {
+  const data = await getDemoOverview(pool);
+  assert.equal(data?.demo, true);
+  assert.equal(data?.totals.clients, 320);
+  assert.equal(data?.totals.pets, 400);
+  assert.ok(data!.appointments.length > 0);
+  assert.ok(data!.products.length > 0);
   const app = buildApp({
     enableDemo: true,
-    ready: async () => {
-      await pool.query('SELECT 1');
-    },
-    overview: () => getDemoOverview(pool),
+    ready: async () => {},
+    overview: (role) => getDemoOverview(pool, role),
   });
   try {
-    const response = await app.inject('/api/demo/overview');
-    assert.equal(response.statusCode, 200);
-    const data = response.json();
-    assert.equal(data.demo, true);
-    assert.equal(data.totals.clients, 320);
-    assert.equal(data.totals.pets, 400);
-    assert.ok(data.appointments.length > 0);
-    assert.ok(data.products.length > 0);
-    assert.equal(
-      (
-        await app.inject({
-          method: 'POST',
-          url: '/api/demo/overview',
-          payload: { name: 'No permitido' },
-        })
-      ).statusCode,
-      404,
-    );
-    assert.doesNotMatch(response.body, /password_hash|token_hash/);
+    assert.equal((await app.inject('/api/demo/overview')).statusCode, 404);
   } finally {
     await app.close();
   }

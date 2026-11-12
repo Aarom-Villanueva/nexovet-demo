@@ -20,12 +20,16 @@
     "db:seed": "npm run db:seed -w @nexovet/api",
     "check": "npm run typecheck && npm test && npm run test:db && npm run build",
     "format": "prettier --write apps packages tests docs *.json *.ts compose.yaml .github/workflows/application.yml",
-    "format:check": "prettier --check apps packages tests docs *.json *.ts compose.yaml .github/workflows/application.yml"
+    "format:check": "prettier --check apps packages tests docs *.json *.ts compose.yaml .github/workflows/application.yml",
+    "auth:demo-users": "npm run auth:demo-users -w @nexovet/api",
+    "auth:create-user": "npm run auth:create-user -w @nexovet/api",
+    "pretest:e2e": "npm run db:migrate && npm run db:seed && npm run auth:demo-users"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "concurrently": "^9.2.1",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3"
-  }
+  },
+  "type": "module"
 }

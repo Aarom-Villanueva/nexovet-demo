@@ -11,17 +11,22 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
     "test": "tsx --test test/api.test.ts",
-    "test:db": "tsx --test --test-concurrency=1 test/database.test.ts"
+    "test:db": "tsx --test --test-concurrency=1 test/database.test.ts test/auth.test.ts",
+    "auth:demo-users": "tsx src/auth/demo-users.ts",
+    "auth:create-user": "tsx src/auth/create-user.ts"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.1.5",
     "@nexovet/shared": "*",
     "dotenv": "^17.2.3",
     "fastify": "^5.6.2",
+    "nodemailer": "^10.5.0",
     "pg": "^8.16.3",
     "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
+    "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.15.6",
     "tsx": "^4.20.6"
   }
