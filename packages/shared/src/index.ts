@@ -28,6 +28,62 @@ export const routeRoles: Record<string, readonly Role[]> = {
 export function canVisit(role: Role, path: string) {
   return routeRoles[path]?.includes(role) ?? false;
 }
+export const canManagePatients = (role: Role) => role === 'admin' || role === 'reception';
+export const speciesLabels = {
+  dog: 'Perro',
+  cat: 'Gato',
+  bird: 'Ave',
+  rabbit: 'Conejo',
+  other: 'Otra especie',
+} as const;
+export const sexLabels = { female: 'Hembra', male: 'Macho', unknown: 'Sin determinar' } as const;
+export type Species = keyof typeof speciesLabels;
+export type PetSex = keyof typeof sexLabels;
+export type DocumentType = 'DNI' | 'CE' | 'RUC' | 'other';
+export interface PageResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+export interface ClientInput {
+  name: string;
+  email: string | null;
+  phone: string | null;
+  documentType: DocumentType | null;
+  documentNumber: string | null;
+  address: string | null;
+  contactConsent: boolean;
+  contactConsentNote: string | null;
+  active: boolean;
+}
+export interface ClientRecord extends Omit<ClientInput, 'contactConsent'> {
+  id: string;
+  contactConsentAt: string | null;
+  version: number;
+  pets: number;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface PetInput {
+  name: string;
+  species: Species;
+  breed: string | null;
+  sex: PetSex;
+  birthDate: string | null;
+  microchip: string | null;
+  allergies: string | null;
+  active: boolean;
+}
+export interface PetRecord extends PetInput {
+  id: string;
+  clientId: string;
+  ownerName: string;
+  ownerActive: boolean;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
 export interface DemoOverview {
   demo: boolean;
   businessName: string;

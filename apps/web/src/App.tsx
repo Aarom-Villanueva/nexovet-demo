@@ -22,6 +22,7 @@ import {
 import { canVisit, roleLabels, type DemoOverview, type AuthUser } from '@nexovet/shared';
 import { AuthProvider, LoginPage, useAuth } from './auth';
 import { useOverview } from './useOverview';
+import { PatientDirectory } from './patients/Directory';
 import { Appointments, date, labels, money, SectionTitle, Status, Table } from './components';
 
 const navigation = [
@@ -247,49 +248,7 @@ function DataViews({ data }: { data: DemoOverview }) {
           </section>
         }
       />
-      <Route
-        path="/clientes"
-        element={
-          <>
-            {role !== 'veterinarian' && (
-              <section className="panel">
-                <SectionTitle
-                  title="Clientes"
-                  subtitle="Muestra de clientes ficticios. Vista de consulta, sin edición."
-                />
-                <Table headers={['Nombre', 'Correo de ejemplo', 'Mascotas']}>
-                  {data.clients.map((client) => (
-                    <tr key={client.id}>
-                      <td>
-                        <strong>{client.name}</strong>
-                      </td>
-                      <td>{client.email ?? 'Sin correo'}</td>
-                      <td>{client.pets}</td>
-                    </tr>
-                  ))}
-                </Table>
-              </section>
-            )}
-            <section className="panel">
-              <SectionTitle
-                title="Mascotas"
-                subtitle="Una muestra de los pacientes de demostración."
-              />
-              <Table headers={['Paciente', 'Especie', 'Responsable']}>
-                {data.pets.map((pet) => (
-                  <tr key={pet.id}>
-                    <td>
-                      <strong>{pet.name}</strong>
-                    </td>
-                    <td>{labels[pet.species] ?? pet.species}</td>
-                    <td>{pet.owner}</td>
-                  </tr>
-                ))}
-              </Table>
-            </section>
-          </>
-        }
-      />
+      <Route path="/clientes" element={<PatientDirectory />} />
       <Route
         path="/inventario"
         element={
@@ -505,17 +464,17 @@ function Workspace() {
           <div className="preview-banner">
             <Activity size={15} />
             <span>
-              Demostración con datos ficticios · Acceso por rol · Operaciones de consulta.
+              Demostración con datos ficticios · Clientes y mascotas con registro y edición.
             </span>
           </div>
         )}
         <main id="main" tabIndex={-1}>
-          {loading ? (
+          {loading && !data ? (
             <div className="panel empty" role="status">
               <span className="loader" />
               <p>Cargando tu vista previa…</p>
             </div>
-          ) : error || !data ? (
+          ) : !data ? (
             <section className="panel empty" role="alert">
               <HeartPulse size={36} />
               <h1>No pudimos cargar la vista previa</h1>
@@ -525,7 +484,17 @@ function Workspace() {
               </button>
             </section>
           ) : (
-            <DataViews data={data} />
+            <>
+              {error && (
+                <p className="auth-error" role="alert">
+                  No pudimos actualizar el resumen.{' '}
+                  <button className="text-link" onClick={retry}>
+                    Reintentar
+                  </button>
+                </p>
+              )}
+              <DataViews data={data} />
+            </>
           )}
           <footer className="page-footer">
             <span>NexoVet · Hecho para cuidar</span>

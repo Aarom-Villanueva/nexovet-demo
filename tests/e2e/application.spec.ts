@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { assertDevelopmentDatabase, parseConfig } from '../../apps/api/src/config';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -47,6 +47,7 @@ test('login, navegación con PostgreSQL, persistencia al recargar y cierre de se
   await expect(page.getByRole('heading', { name: 'Agenda de hoy' })).toBeVisible();
   await page.getByRole('link', { name: 'Clientes y mascotas' }).click();
   await expect(page.getByRole('heading', { name: 'Clientes', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Mascotas', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Mascotas', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Inventario', exact: true }).click();
   await expect(page.getByRole('cell', { name: 'NV-0001', exact: true })).toBeVisible();
@@ -201,4 +202,240 @@ test('recuperación escribe en buzón privado local y el formulario cambia la co
     await pool.query('UPDATE users SET active=false,login_enabled=false WHERE id=$1', [userId]);
     await pool.end();
   }
+});
+
+const createdClients: string[] = [];
+const createdPets: string[] = [];
+test.afterAll(async () => {
+  const { default: pg } = await import('pg');
+  const pool = new pg.Pool({ connectionString: databaseUrl });
+  try {
+    await pool.query('DELETE FROM pets WHERE id=ANY($1::uuid[])', [createdPets]);
+    await pool.query('DELETE FROM clients WHERE id=ANY($1::uuid[])', [createdClients]);
+  } finally {
+    await pool.end();
+  }
+});
+const clientBody = (name: string) => ({
+  name,
+  email: null,
+  phone: null,
+  documentType: null,
+  documentNumber: null,
+  address: null,
+  contactConsent: false,
+  contactConsentNote: null,
+  active: true,
+});
+async function writeFromBrowser(page: Page, path: string, body: unknown, method = 'POST') {
+  const session = await page.request.get('/api/auth/session');
+  const response = await page.request.fetch(path, {
+    method,
+    headers: { origin: 'http://127.0.0.1:5173', 'x-csrf-token': (await session.json()).csrfToken },
+    data: body,
+  });
+  return response;
+}
+async function fixtureClient(page: Page, name: string, extra: object = {}) {
+  const response = await writeFromBrowser(page, '/api/clients', { ...clientBody(name), ...extra });
+  expect(response.status()).toBe(201);
+  const record = await response.json();
+  createdClients.push(record.id);
+  return record;
+}
+async function clientsPage(page: Page) {
+  await page.getByRole('link', { name: 'Clientes y mascotas', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Clientes', exact: true })).toBeVisible();
+}
+test('registra cliente y mascota desde su ficha, edita datos y conserva cambios al recargar', async ({
+  page,
+}) => {
+  await login(page);
+  await clientsPage(page);
+  const clientName = `Familia E2E ${randomUUID().slice(0, 8)}`;
+  const petName = `Luna E2E ${randomUUID().slice(0, 8)}`;
+  await page.getByRole('button', { name: 'Nuevo cliente', exact: true }).click();
+  let dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nombre completo *', { exact: true }).fill(clientName);
+  await dialog.getByLabel('Teléfono', { exact: true }).fill('000000000');
+  await dialog
+    .getByLabel('Correo electrónico', { exact: true })
+    .fill('familia-demo@example.invalid');
+  await dialog.getByLabel('Autoriza contacto para seguimientos y recordatorios').check();
+  await dialog
+    .getByLabel('Cómo se obtuvo la autorización *')
+    .fill('Autorización ficticia durante la prueba');
+  const clientResponse = page.waitForResponse(
+    (response) => response.url().endsWith('/api/clients') && response.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Registrar cliente', exact: true }).click();
+  const client = await (await clientResponse).json();
+  createdClients.push(client.id);
+  await expect(page.getByRole('dialog', { name: clientName, exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Registrar mascota', exact: true }).click();
+  await dialog.getByLabel('Nombre de la mascota *').fill(petName);
+  await dialog.getByLabel('Especie *').selectOption('cat');
+  await dialog.getByLabel('Sexo', { exact: true }).selectOption('female');
+  await dialog.getByLabel('Fecha de nacimiento', { exact: true }).fill('2023-04-15');
+  await dialog
+    .getByLabel('Alergias y observaciones relevantes')
+    .fill('Observación clínica de prueba');
+  const petResponse = page.waitForResponse(
+    (response) => response.url().endsWith('/api/pets') && response.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Registrar mascota', exact: true }).click();
+  const pet = await (await petResponse).json();
+  createdPets.push(pet.id);
+  expect(pet.clientId).toBe(client.id);
+  await expect(page.getByRole('dialog', { name: petName, exact: true })).toBeVisible();
+  await expect(dialog.getByText(clientName, { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Editar mascota', exact: true }).click();
+  await dialog
+    .getByLabel('Alergias y observaciones relevantes')
+    .fill('Observación corregida y persistente');
+  await dialog.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
+  await expect(
+    dialog.getByText('Observación corregida y persistente', { exact: true }),
+  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await page.reload();
+  await page.getByRole('button', { name: `Ver ficha de ${petName}`, exact: true }).click();
+  await expect(
+    dialog.getByText('Observación corregida y persistente', { exact: true }),
+  ).toBeVisible();
+});
+test('recepción puede registrar; documento duplicado muestra error y conserva el formulario', async ({
+  page,
+}) => {
+  await login(page, 'reception');
+  const doc = randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase();
+  await fixtureClient(page, `Duplicado E2E ${doc}`, { documentType: 'CE', documentNumber: doc });
+  await clientsPage(page);
+  await page.getByRole('button', { name: 'Nuevo cliente', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nombre completo *', { exact: true }).fill('Nombre que debe conservarse');
+  await dialog.getByLabel('Tipo de documento', { exact: true }).selectOption('CE');
+  await dialog.getByLabel('Número de documento', { exact: true }).fill(doc);
+  await dialog.getByRole('button', { name: 'Registrar cliente', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Ya existe un cliente');
+  await expect(dialog.getByLabel('Nombre completo *', { exact: true })).toHaveValue(
+    'Nombre que debe conservarse',
+  );
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+});
+test('conflicto de versión conserva el borrador y permite cargar la ficha actual', async ({
+  page,
+}) => {
+  await login(page);
+  const record = await fixtureClient(page, `Concurrente E2E ${randomUUID().slice(0, 8)}`);
+  await clientsPage(page);
+  await page.getByLabel('Buscar clientes', { exact: true }).fill(record.name);
+  await page.getByRole('button', { name: 'Buscar', exact: true }).click();
+  await page.getByRole('button', { name: `Editar a ${record.name}`, exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nombre completo *', { exact: true }).fill('Mi borrador sin perder');
+  const other = await writeFromBrowser(
+    page,
+    `/api/clients/${record.id}`,
+    { ...clientBody('Edición de otra recepción'), version: record.version },
+    'PUT',
+  );
+  expect(other.status()).toBe(200);
+  await dialog.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Otra persona actualizó esta ficha');
+  await expect(dialog.getByLabel('Nombre completo *', { exact: true })).toHaveValue(
+    'Mi borrador sin perder',
+  );
+  await dialog.getByRole('button', { name: 'Recargar ficha actual', exact: true }).click();
+  await expect(dialog.getByLabel('Nombre completo *', { exact: true })).toHaveValue(
+    'Edición de otra recepción',
+  );
+  await dialog.getByLabel('Nombre completo *', { exact: true }).fill('Versión final revisada');
+  await dialog.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Versión final revisada', exact: true }),
+  ).toBeVisible();
+  expect((await (await page.request.get(`/api/clients/${record.id}`)).json()).version).toBe(3);
+});
+test('busca al responsable para registrar una mascota desde el directorio', async ({ page }) => {
+  await login(page, 'reception');
+  const owner = await fixtureClient(page, `Responsable E2E ${randomUUID().slice(0, 8)}`);
+  await clientsPage(page);
+  await page.getByRole('button', { name: 'Nueva mascota', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  const name = `Toby E2E ${randomUUID().slice(0, 8)}`;
+  await dialog.getByLabel('Nombre de la mascota *', { exact: true }).fill(name);
+  await dialog.getByRole('button', { name: 'Registrar mascota', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Selecciona al responsable');
+  await dialog.getByLabel('Buscar responsable *', { exact: true }).fill(owner.name);
+  await dialog.getByRole('button', { name: `Seleccionar a ${owner.name}`, exact: true }).click();
+  const response = page.waitForResponse(
+    (response) => response.url().endsWith('/api/pets') && response.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Registrar mascota', exact: true }).click();
+  const record = await (await response).json();
+  createdPets.push(record.id);
+  expect(record.clientId).toBe(owner.id);
+  await expect(page.getByRole('dialog', { name, exact: true })).toBeVisible();
+});
+test('fallo de red y retorno a la pestaña conservan el borrador y permiten guardar después', async ({
+  page,
+}) => {
+  await login(page);
+  await clientsPage(page);
+  await page.getByRole('button', { name: 'Nuevo cliente', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  const name = `Borrador E2E ${randomUUID().slice(0, 8)}`;
+  await dialog.getByLabel('Nombre completo *', { exact: true }).fill(name);
+  await page.route('**/api/clients', (route) =>
+    route.request().method() === 'POST' ? route.abort() : route.continue(),
+  );
+  await dialog.getByRole('button', { name: 'Registrar cliente', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Tus cambios siguen en el formulario');
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(dialog.getByLabel('Nombre completo *', { exact: true })).toHaveValue(name);
+  await page.unroute('**/api/clients');
+  const response = page.waitForResponse(
+    (response) => response.url().endsWith('/api/clients') && response.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Registrar cliente', exact: true }).click();
+  const saved = await (await response).json();
+  createdClients.push(saved.id);
+  await expect(page.getByRole('dialog', { name, exact: true })).toBeVisible();
+});
+test('formulario móvil permite guardar, archivar y encontrar el registro con filtros', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page, 'reception');
+  await page.getByRole('button', { name: 'Abrir menú', exact: true }).click();
+  await clientsPage(page);
+  await page.getByRole('button', { name: 'Nuevo cliente', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  const name = `Móvil E2E ${randomUUID().slice(0, 8)}`;
+  await dialog.getByLabel('Nombre completo *', { exact: true }).fill(name);
+  await dialog
+    .getByLabel('Dirección', { exact: true })
+    .fill('Dirección sintética de la prueba móvil');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const response = page.waitForResponse(
+    (response) => response.url().endsWith('/api/clients') && response.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Registrar cliente', exact: true }).click();
+  const record = await (await response).json();
+  createdClients.push(record.id);
+  await dialog.getByRole('button', { name: 'Editar cliente', exact: true }).click();
+  await dialog.getByLabel('Estado del cliente', { exact: true }).selectOption('false');
+  await dialog.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
+  await expect(dialog.getByText('Cliente archivado', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'No encontramos registros', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('combobox', { name: 'Estado', exact: true }).selectOption('archived');
+  await expect(
+    page.getByRole('button', { name: `Ver ficha de ${name}`, exact: true }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

@@ -38,7 +38,9 @@ No cargar información real antes de completar y desplegar la aplicación.
 
 ## Qué puedes recorrer
 
-Resumen, agenda del día, muestra de clientes y mascotas, inventario y seguimiento.
+Resumen, agenda del día, directorio de clientes y mascotas, inventario y seguimiento.
+[El bloque 4](CLIENTES-Y-MASCOTAS.md) permite registrar, editar, buscar y archivar
+fichas. Administrador y recepción escriben; veterinario solo consulta pacientes.
 La consulta llega a PostgreSQL a través de la API: no hay una respuesta simulada
 que esconda fallos de conexión. Si la API o la semilla no están disponibles, la
 interfaz muestra el error y permite reintentar.
@@ -46,7 +48,8 @@ interfaz muestra el error y permite reintentar.
 Compras, ventas y reportes siguen «en preparación». Administración muestra
 las cuentas/roles, sin editar; solo la ve el administrador. El veterinario ve
 pacientes y agenda, sin correos de clientes, inventario ni precios. Las consultas
-presentan muestras limitadas; la edición y paginación se implementan por bloque.
+de clientes y mascotas están paginadas. Los demás módulos aún presentan muestras
+limitadas y se completan por bloque.
 La demo estática antigua sigue abriendo desde GitHub Pages y sus accesos por rol
 son simulados: no son las cuentas de esta nueva aplicación.
 
@@ -86,10 +89,13 @@ No necesitan permisos sobre una base real.
 
 `npm run check` ejecuta tipos, pruebas de API, pruebas con PostgreSQL real y la
 compilación de frontend/backend. Las pruebas de navegador comprueban navegación,
-login, sesiones, roles, lectura de datos, recuperación, error/reintento y pantalla móvil.
+login, sesiones, roles, recuperación, altas/edición de fichas, conflictos entre
+ediciones, conservación de borradores, archivo, error/reintento y pantalla móvil.
 `test:e2e` prepara migraciones, semilla y accesos locales antes de ejecutar.
 Las pruebas de autenticación crean usuarios sintéticos; se desactivan al terminar
-y se conservan sus registros de auditoría. La prueba concurrente deja
+y se conservan sus registros de auditoría. Las pruebas de fichas limpian únicamente
+los clientes y mascotas que ellas crean, sin borrar su auditoría; no modifican
+fichas de la semilla. La prueba concurrente deja
 asientos de prueba compensados en la base de test, sin modificar el saldo final.
 El flujo de GitHub Actions ejecuta estas verificaciones en cada pull request.
 
@@ -110,7 +116,7 @@ solo aloja la demo estática. El despliegue operativo corresponde al bloque 10.
 ```text
 apps/api/src/          API, configuración, conexión y comandos de base
 apps/web/src/          React, navegación, consultas y componentes
-packages/shared/src/  Contrato TypeScript de la vista previa
+packages/shared/src/  Contratos TypeScript de acceso, fichas y resumen
 database/migrations/  SQL versionado, ejecutado en orden y con checksum
 database/seeds/       Datos sintéticos idempotentes
 docs/                 Modelo, decisiones y plan

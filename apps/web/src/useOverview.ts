@@ -42,7 +42,6 @@ export function useOverview() {
       .catch(() => {
         if (!controller.signal.aborted) {
           setError(true);
-          setData(null);
         }
       })
       .finally(() => {

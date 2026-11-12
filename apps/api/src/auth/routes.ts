@@ -14,6 +14,7 @@ import {
   verifyPassword,
 } from './crypto.js';
 import type { SendResetMail, ResetMail } from './mail.js';
+import { registerPatients } from '../patients/routes.js';
 
 interface Identity {
   user: AuthUser;
@@ -122,6 +123,17 @@ export async function registerAuth(app: FastifyInstance, options: AuthOptions) {
       if (!request.identity || !roles.includes(request.identity.user.role))
         return reply.code(403).send({ message: 'Tu rol no tiene acceso a esta sección.' });
     };
+  async function requireWrite(request: FastifyRequest, reply: FastifyReply) {
+    if (!originAllowed(request))
+      return reply.code(403).send({ message: 'Origen de solicitud no permitido.' });
+    const csrf = request.headers['x-csrf-token'];
+    if (
+      typeof csrf !== 'string' ||
+      !request.identity ||
+      !constantEqual(csrf, request.identity.csrfToken)
+    )
+      return reply.code(403).send({ message: 'Solicitud no válida. Recarga la página.' });
+  }
   app.post('/api/auth/login', { preHandler: authEntry }, async (request, reply) => {
     const parsed = loginSchema.safeParse(request.body);
     if (!parsed.success)
@@ -322,8 +334,6 @@ export async function registerAuth(app: FastifyInstance, options: AuthOptions) {
   }
   app.get('/api/overview', { preHandler: requireSession }, overview);
   for (const [path, field, roles] of [
-    ['/api/clients', 'clients', ['admin', 'reception']],
-    ['/api/pets', 'pets', ['admin', 'reception', 'veterinarian']],
     ['/api/products', 'products', ['admin', 'reception']],
   ] as const) {
     app.get(path, { preHandler: [requireSession, permit(roles)] }, async (request, reply) => {
@@ -341,4 +351,5 @@ export async function registerAuth(app: FastifyInstance, options: AuthOptions) {
         )
       ).rows,
   );
+  await registerPatients(app, { pool, requireSession, requireWrite, permit });
 }
