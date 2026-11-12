@@ -152,8 +152,8 @@ export async function activeRelations(c: PoolClient, supplierId: string, product
     throw new Problem(409, 'Todos los productos deben estar activos. Revisa las líneas.');
 }
 export const movementFrom =
-  'FROM stock_movements m JOIN users u ON u.id=m.recorded_by LEFT JOIN purchase_order_lines l ON l.id=m.purchase_line_id LEFT JOIN purchase_orders o ON o.id=l.purchase_order_id';
-export const movementColumns = `m.id,m.product_id AS "productId",m.quantity::text,m.kind,m.reason,u.name AS "recordedByName",${iso('m.created_at')} AS "createdAt",o.id AS "purchaseId",o.number AS "purchaseNumber"`;
+  'FROM stock_movements m JOIN users u ON u.id=m.recorded_by LEFT JOIN purchase_order_lines l ON l.id=m.purchase_line_id LEFT JOIN purchase_orders o ON o.id=l.purchase_order_id LEFT JOIN sale_lines sl ON sl.id=m.sale_line_id LEFT JOIN sales v ON v.id=sl.sale_id';
+export const movementColumns = `m.id,m.product_id AS "productId",m.quantity::text,m.kind,m.reason,u.name AS "recordedByName",${iso('m.created_at')} AS "createdAt",o.id AS "purchaseId",o.number AS "purchaseNumber",v.id AS "saleId",v.number AS "saleNumber"`;
 export async function movement(c: PoolClient, id: string) {
   return (
     await c.query<StockMovement>(`SELECT ${movementColumns} ${movementFrom} WHERE m.id=$1`, [id])

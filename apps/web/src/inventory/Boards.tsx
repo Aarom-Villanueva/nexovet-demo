@@ -44,7 +44,7 @@ function MovementHistory({ id }: { id: string }) {
             <p>{m.reason}</p>
             <small>
               {stamp(m.createdAt)} · {m.recordedByName}
-              {m.purchaseNumber ? ` · ${m.purchaseNumber}` : ''}
+              {m.purchaseNumber || m.saleNumber ? ` · ${m.purchaseNumber ?? m.saleNumber}` : ''}
             </small>
           </li>
         ))}

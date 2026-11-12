@@ -248,6 +248,7 @@ const createdAppointments: string[] = [];
 const createdProducts: string[] = [];
 const createdSuppliers: string[] = [];
 const createdPurchases: string[] = [];
+const createdSales: string[] = [];
 test.afterAll(async () => {
   const { default: pg } = await import('pg');
   const pool = new pg.Pool({ connectionString: databaseUrl });
@@ -270,6 +271,10 @@ test.afterAll(async () => {
           [id, stock, actor],
         );
     }
+    await pool.query(
+      "UPDATE sales SET status='cancelled',version=version+1 WHERE id=ANY($1::uuid[]) AND status='draft'",
+      [createdSales],
+    );
     await pool.query('UPDATE products SET active=false WHERE id=ANY($1::uuid[])', [
       createdProducts,
     ]);
@@ -1402,4 +1407,316 @@ test('compras: muestra centavos exactos también en importes grandes', async ({ 
   expect(record.total).toBe('99999989900000.01');
   await openPurchase(page, record);
   await expect(page.getByRole('dialog').getByText(/99,999,989,900,000\.01/)).toHaveCount(2);
+});
+
+async function salesProduct(page: Page, price = '15.50', balance = '3') {
+  const r = await writeFromBrowser(page, '/api/products', {
+    sku: `SALE-${randomUUID().slice(0, 8)}`,
+    name: `Producto ventas ${randomUUID().slice(0, 8)}`,
+    categoryId: null,
+    salePrice: price,
+    minimumStock: '1',
+    active: true,
+  });
+  expect(r.status()).toBe(201);
+  const p = await r.json();
+  createdProducts.push(p.id);
+  const adjustment = await writeFromBrowser(page, `/api/products/${p.id}/adjustments`, {
+    requestId: randomUUID(),
+    quantity: balance,
+    reason: 'Saldo ficticio de la prueba de ventas',
+  });
+  expect(adjustment.status()).toBe(201);
+  return p;
+}
+async function salesFixture(page: Page, product: { id: string }, quantity = '1') {
+  const r = await writeFromBrowser(page, '/api/sales', {
+    requestId: randomUUID(),
+    clientId: null,
+    note: 'Venta ficticia E2E',
+    lines: [{ kind: 'product', itemId: product.id, quantity }],
+  });
+  expect(r.status()).toBe(201);
+  const s = await r.json();
+  createdSales.push(s.id);
+  return s;
+}
+async function openSale(page: Page, s: { number: string }) {
+  await page.goto(`/ventas?q=${encodeURIComponent(s.number)}`);
+  await page.getByRole('button', { name: `Abrir venta ${s.number}`, exact: true }).click();
+}
+async function addSaleProduct(page: Page, p: { sku: string; name: string }) {
+  const d = page.getByRole('dialog');
+  await d.getByLabel('Buscar producto de venta', { exact: true }).fill(p.sku);
+  await d.getByRole('button', { name: `Agregar producto ${p.name}`, exact: true }).click();
+}
+async function saveSale(page: Page) {
+  const pending = page.waitForResponse(
+    (r) => r.url().endsWith('/api/sales') && r.request().method() === 'POST',
+  );
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Guardar venta', exact: true })
+    .click();
+  const r = await pending;
+  expect(r.status()).toBe(201);
+  const s = await r.json();
+  createdSales.push(s.id);
+  return s;
+}
+async function confirmSale(page: Page) {
+  const pending = page.waitForResponse(
+    (r) => /\/api\/sales\/[^/]+\/confirm$/.test(r.url()) && r.request().method() === 'POST',
+  );
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Confirmar venta', exact: true })
+    .click();
+  return pending;
+}
+test('ventas: recepción prepara productos y servicios, asocia cliente y confirma cobros combinados', async ({
+  page,
+}) => {
+  await login(page);
+  const p = await salesProduct(page);
+  const service = (
+    await (await page.request.get('/api/sales/items?kind=service&q=Consulta%20general')).json()
+  )[0];
+  const hex = createHash('md5').update('client:1').digest('hex');
+  const clientId = [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20),
+  ].join('-');
+  const client = await (await page.request.get(`/api/clients/${clientId}`)).json();
+  await logoutUI(page);
+  await login(page, 'reception');
+  await page.goto('/ventas');
+  await page.getByRole('button', { name: 'Nueva venta', exact: true }).click();
+  const d = page.getByRole('dialog');
+  await addSaleProduct(page, p);
+  await d.getByRole('button', { name: 'Asociar cliente', exact: true }).click();
+  await d.getByLabel('Buscar cliente de venta', { exact: true }).fill(client.name);
+  await d.getByRole('button', { name: `Agregar cliente ${client.name}`, exact: true }).click();
+  await d.getByLabel('Agregar a la venta', { exact: true }).selectOption('service');
+  await d.getByLabel('Buscar servicio de venta', { exact: true }).fill(service.name);
+  await d.getByRole('button', { name: `Agregar servicio ${service.name}`, exact: true }).click();
+  const s = await saveSale(page);
+  expect(s.clientId).toBe(client.id);
+  expect(s.total).toBe('65.50');
+  await expect(page.getByRole('dialog', { name: s.number, exact: true })).toBeVisible();
+  await d.getByRole('button', { name: 'Editar venta', exact: true }).click();
+  await d.getByLabel(`Cantidad de ${p.sku} *`, { exact: true }).fill('2');
+  await d.getByRole('button', { name: 'Guardar venta', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: s.number, exact: true })).toBeVisible();
+  await d.getByRole('button', { name: 'Registrar cobros y confirmar', exact: true }).click();
+  await d.getByLabel('Medio de pago 1 *', { exact: true }).selectOption('cash');
+  await d.getByLabel('Importe del pago 1 (S/) *', { exact: true }).fill('31.00');
+  await d.getByRole('button', { name: 'Agregar otro pago', exact: true }).click();
+  await d.getByLabel('Medio de pago 2 *', { exact: true }).selectOption('transfer');
+  await d.getByLabel('Importe del pago 2 (S/) *', { exact: true }).fill('50.00');
+  await d.getByLabel('Referencia del pago 2 *', { exact: true }).fill('TRANSFERENCIA-FICTICIA-01');
+  const confirmed = await confirmSale(page);
+  expect(confirmed.status()).toBe(200);
+  await expect(d.getByText('Confirmada', { exact: true })).toBeVisible();
+  await expect(d.getByText('Transferencia', { exact: true })).toBeVisible();
+  expect((await (await page.request.get(`/api/products/${p.id}`)).json()).stock).toBe('1.000');
+  await page.reload();
+  await page.getByRole('button', { name: `Abrir venta ${s.number}`, exact: true }).click();
+  await expect(d.getByText('TRANSFERENCIA-FICTICIA-01', { exact: false })).toBeVisible();
+  await page.goto(`/clientes?q=${encodeURIComponent(client.name)}`);
+  await page.getByRole('button', { name: `Ver ficha de ${client.name}`, exact: true }).click();
+  await d.getByRole('link', { name: 'Ver ventas', exact: true }).click();
+  await expect(page.getByText(`Ventas de ${client.name}`, { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: `Abrir venta ${s.number}`, exact: true }),
+  ).toBeVisible();
+});
+test('ventas: stock insuficiente no registra cobros y permite corregir el borrador', async ({
+  page,
+}) => {
+  await login(page);
+  const p = await salesProduct(page, '15.50', '1'),
+    s = await salesFixture(page, p, '2');
+  await openSale(page, s);
+  const d = page.getByRole('dialog');
+  await d.getByRole('button', { name: 'Registrar cobros y confirmar', exact: true }).click();
+  await d.getByLabel('Medio de pago 1 *', { exact: true }).selectOption('cash');
+  const failed = await confirmSale(page);
+  expect(failed.status()).toBe(409);
+  await expect(d.getByRole('alert')).toContainText('Stock insuficiente');
+  let saved = await (await page.request.get(`/api/sales/${s.id}`)).json();
+  expect(saved.status).toBe('draft');
+  expect(saved.payments).toHaveLength(0);
+  await d.getByRole('button', { name: 'Volver', exact: true }).click();
+  await d.getByRole('button', { name: 'Editar venta', exact: true }).click();
+  await d.getByLabel(`Cantidad de ${p.sku} *`, { exact: true }).fill('1');
+  await d.getByRole('button', { name: 'Guardar venta', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: s.number, exact: true })).toBeVisible();
+  await d.getByRole('button', { name: 'Registrar cobros y confirmar', exact: true }).click();
+  await d.getByLabel('Medio de pago 1 *', { exact: true }).selectOption('cash');
+  expect((await confirmSale(page)).status()).toBe(200);
+  await expect(d.getByText('Confirmada', { exact: true })).toBeVisible();
+  expect((await (await page.request.get(`/api/products/${p.id}`)).json()).stock).toBe('0.000');
+});
+test('ventas móvil: cobros deben cuadrar y transferencia requiere referencia', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  const p = await salesProduct(page),
+    s = await salesFixture(page, p);
+  await openSale(page, s);
+  const d = page.getByRole('dialog');
+  await d.getByRole('button', { name: 'Registrar cobros y confirmar', exact: true }).click();
+  await d.getByLabel('Medio de pago 1 *', { exact: true }).selectOption('cash');
+  await d.getByLabel('Importe del pago 1 (S/) *', { exact: true }).fill('15.49');
+  expect((await confirmSale(page)).status()).toBe(400);
+  await expect(d.getByRole('alert')).toContainText('La suma de los cobros');
+  await d.getByLabel('Medio de pago 1 *', { exact: true }).selectOption('transfer');
+  await expect(d.getByLabel('Referencia del pago 1 *', { exact: true })).toHaveAttribute(
+    'required',
+    '',
+  );
+  await d.getByLabel('Referencia del pago 1 *', { exact: true }).fill('OPERACION-FICTICIA');
+  await d.getByLabel('Importe del pago 1 (S/) *', { exact: true }).fill('15.50');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect((await confirmSale(page)).status()).toBe(200);
+  await expect(d.getByText('Confirmada', { exact: true })).toBeVisible();
+});
+test('ventas: respuesta perdida al confirmar no duplica cobros ni salidas', async ({ page }) => {
+  await login(page);
+  const p = await salesProduct(page),
+    s = await salesFixture(page, p);
+  await openSale(page, s);
+  const d = page.getByRole('dialog');
+  await d.getByRole('button', { name: 'Registrar cobros y confirmar', exact: true }).click();
+  await d.getByLabel('Medio de pago 1 *', { exact: true }).selectOption('cash');
+  const path = `**/api/sales/${s.id}/confirm`;
+  await page.route(path, async (route) => {
+    const r = await route.fetch();
+    expect(r.status()).toBe(200);
+    await route.abort();
+  });
+  await d.getByRole('button', { name: 'Confirmar venta', exact: true }).click();
+  await expect(d.getByRole('alert')).toContainText('Tus cambios siguen en el formulario');
+  await expect(d.getByLabel('Importe del pago 1 (S/) *', { exact: true })).toBeDisabled();
+  await page.unroute(path);
+  const pending = page.waitForResponse((r) => r.url().endsWith(`/api/sales/${s.id}/confirm`));
+  await d.getByRole('button', { name: 'Reintentar confirmación', exact: true }).click();
+  const r = await pending;
+  expect(r.headers()['idempotent-replay']).toBe('true');
+  await expect(d.getByText('Confirmada', { exact: true })).toBeVisible();
+  const saved = await (await page.request.get(`/api/sales/${s.id}`)).json();
+  expect(saved.payments).toHaveLength(1);
+  expect(saved.version).toBe(2);
+  expect((await (await page.request.get(`/api/products/${p.id}`)).json()).stock).toBe('2.000');
+  const movements = await (await page.request.get(`/api/products/${p.id}/movements`)).json();
+  expect(movements.items.filter((m: { kind: string }) => m.kind === 'sale')).toHaveLength(1);
+});
+test('ventas: respuesta perdida al crear conserva una sola venta', async ({ page }) => {
+  await login(page);
+  const p = await salesProduct(page);
+  await page.goto('/ventas');
+  await page.getByRole('button', { name: 'Nueva venta', exact: true }).click();
+  await addSaleProduct(page, p);
+  const d = page.getByRole('dialog');
+  let id = '';
+  await page.route('**/api/sales', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    const r = await route.fetch();
+    expect(r.status()).toBe(201);
+    id = (await r.json()).id;
+    createdSales.push(id);
+    await route.abort();
+  });
+  await d.getByRole('button', { name: 'Guardar venta', exact: true }).click();
+  await expect(d.getByRole('alert')).toContainText('Tus cambios siguen en el formulario');
+  await expect(d.getByLabel(`Cantidad de ${p.sku} *`, { exact: true })).toBeDisabled();
+  await page.unroute('**/api/sales');
+  const pending = page.waitForResponse(
+    (r) => r.url().endsWith('/api/sales') && r.request().method() === 'POST',
+  );
+  await d.getByRole('button', { name: 'Reintentar venta', exact: true }).click();
+  const r = await pending;
+  expect(r.headers()['idempotent-replay']).toBe('true');
+  expect((await r.json()).id).toBe(id);
+  await expect(d.getByText('Borrador', { exact: true })).toBeVisible();
+  expect((await (await page.request.get(`/api/products/${p.id}`)).json()).stock).toBe('3.000');
+});
+test('ventas: conflicto conserva edición y cancelar no mueve stock', async ({ page }) => {
+  await login(page);
+  const p = await salesProduct(page),
+    s = await salesFixture(page, p);
+  await openSale(page, s);
+  const d = page.getByRole('dialog');
+  await d.getByRole('button', { name: 'Editar venta', exact: true }).click();
+  await d.getByLabel('Nota de la venta', { exact: true }).fill('Borrador de venta sin perder');
+  const r = await writeFromBrowser(
+    page,
+    `/api/sales/${s.id}`,
+    {
+      clientId: null,
+      note: 'Actualizado en otra sesión',
+      version: 1,
+      lines: [{ kind: 'product', itemId: p.id, quantity: '2' }],
+    },
+    'PUT',
+  );
+  expect(r.status()).toBe(200);
+  await d.getByRole('button', { name: 'Guardar venta', exact: true }).click();
+  await expect(d.getByRole('alert')).toContainText('Otra persona actualizó este registro');
+  await expect(d.getByLabel('Nota de la venta', { exact: true })).toHaveValue(
+    'Borrador de venta sin perder',
+  );
+  await d.getByRole('button', { name: 'Recargar ficha actual', exact: true }).click();
+  await expect(d.getByLabel('Nota de la venta', { exact: true })).toHaveValue(
+    'Actualizado en otra sesión',
+  );
+  await d.getByRole('button', { name: 'Guardar venta', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: s.number, exact: true })).toBeVisible();
+  await d.getByRole('button', { name: 'Cancelar venta', exact: true }).click();
+  await expect(d.getByText('Cancelada', { exact: true })).toBeVisible();
+  expect((await (await page.request.get(`/api/products/${p.id}`)).json()).stock).toBe('3.000');
+});
+test('ventas: veterinario no recibe datos de ventas ni búsquedas comerciales', async ({ page }) => {
+  await login(page, 'veterinarian');
+  await expect(page.getByRole('link', { name: 'Ventas', exact: true })).toHaveCount(0);
+  await page.goto('/ventas');
+  await expect(
+    page.getByRole('heading', { name: 'Acceso restringido', exact: true }),
+  ).toBeVisible();
+  for (const path of [
+    '/api/sales',
+    '/api/sales/items?kind=product&q=NV',
+    '/api/sales/clients?q=Demo',
+  ])
+    expect((await page.request.get(path)).status()).toBe(403);
+});
+test('ventas: lectura fallida informa y permite reintentar', async ({ page }) => {
+  await login(page);
+  await page.route('**/api/sales?*', (route) =>
+    route.fulfill({ status: 503, json: { message: 'Ventas temporalmente no disponibles' } }),
+  );
+  await page.goto('/ventas');
+  await expect(page.getByRole('alert')).toContainText('Ventas temporalmente no disponibles');
+  await page.unroute('**/api/sales?*');
+  await page.getByRole('button', { name: 'Intentar nuevamente', exact: true }).click();
+  await expect(page.getByRole('columnheader', { name: 'Conceptos', exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+test('ventas: total cero confirma sin cobros y descuenta el producto', async ({ page }) => {
+  await login(page);
+  const p = await salesProduct(page, '0.00'),
+    s = await salesFixture(page, p);
+  await openSale(page, s);
+  const d = page.getByRole('dialog');
+  await d.getByRole('button', { name: 'Registrar cobros y confirmar', exact: true }).click();
+  await expect(
+    d.getByText('El total es cero. La venta se confirmará sin cobros.', { exact: true }),
+  ).toBeVisible();
+  await expect(d.getByLabel('Medio de pago 1 *', { exact: true })).toHaveCount(0);
+  expect((await confirmSale(page)).status()).toBe(200);
+  await expect(d.getByText('Venta con total cero, sin cobros.', { exact: true })).toBeVisible();
+  expect((await (await page.request.get(`/api/products/${p.id}`)).json()).stock).toBe('2.000');
 });

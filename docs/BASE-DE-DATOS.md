@@ -124,3 +124,12 @@ conservados en la recepción. Protege cabeceras y líneas finalizadas. Las entra
 por recepción, su estado y auditoría se confirman en una transacción; el saldo
 continúa derivándose del libro inmutable. Detalles y límites en
 [INVENTARIO-Y-COMPRAS.md](INVENTARIO-Y-COMPRAS.md).
+
+## Ampliación del bloque 8
+
+`007_sales_payments.sql` añade versiones, solicitudes idempotentes y datos conservados
+para ventas. Protege documentos finalizados, líneas y pagos. Una comprobación diferida
+exige, al confirmar, líneas, suma de pagos igual al total y una salida exacta por
+producto. La API confirma pagos, stock, estado y auditoría en una transacción;
+los servicios no consumen existencias. Contrato y límites en
+[VENTAS-Y-COBROS.md](VENTAS-Y-COBROS.md).

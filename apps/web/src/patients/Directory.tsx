@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -212,6 +212,9 @@ function ClientDetails({
             Nuevo seguimiento
           </button>
         )}
+        <Link className="secondary-button" to={`/ventas?clientId=${client.id}`}>
+          Ver ventas
+        </Link>
         <button className="secondary-button" onClick={onContacts}>
           Historial de contactos
         </button>

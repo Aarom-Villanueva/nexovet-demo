@@ -369,6 +369,8 @@ export interface StockMovement {
   createdAt: string;
   purchaseId: string | null;
   purchaseNumber: string | null;
+  saleId: string | null;
+  saleNumber: string | null;
 }
 export interface StockAdjustmentInput {
   requestId: string;
@@ -379,4 +381,84 @@ export interface InventoryStats {
   active: number;
   low: number;
   empty: number;
+}
+
+export const saleStatusLabels = {
+  draft: 'Borrador',
+  confirmed: 'Confirmada',
+  cancelled: 'Cancelada',
+} as const;
+export const paymentMethodLabels = {
+  cash: 'Efectivo',
+  card: 'Tarjeta',
+  transfer: 'Transferencia',
+} as const;
+export type SaleItemKind = 'product' | 'service';
+export interface SaleLineInput {
+  kind: SaleItemKind;
+  itemId: string;
+  quantity: string;
+}
+export interface SaleInput {
+  clientId: string | null;
+  note: string;
+  lines: SaleLineInput[];
+}
+export interface SaleItemChoice {
+  id: string;
+  kind: SaleItemKind;
+  name: string;
+  sku: string | null;
+  price: string;
+  stock: string | null;
+}
+export interface SaleClientChoice {
+  id: string;
+  name: string;
+  documentNumber: string | null;
+}
+export interface SaleRecord {
+  id: string;
+  number: string;
+  clientId: string | null;
+  clientName: string | null;
+  status: keyof typeof saleStatusLabels;
+  note: string;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  confirmedAt: string | null;
+  createdByName: string;
+  confirmedByName: string | null;
+  total: string;
+  paid: string;
+  lineCount: number;
+}
+export interface PaymentInput {
+  method: keyof typeof paymentMethodLabels;
+  amount: string;
+  reference: string | null;
+}
+export interface SaleConfirmInput {
+  requestId: string;
+  version: number;
+  payments: PaymentInput[];
+}
+export interface PaymentRecord extends PaymentInput {
+  id: string;
+  recordedByName: string;
+  paidAt: string;
+}
+export interface SaleDetail extends SaleRecord {
+  lines: Array<
+    SaleLineInput & {
+      id: string;
+      description: string;
+      sku: string | null;
+      unitPrice: string;
+      lineTotal: string;
+      active: boolean;
+    }
+  >;
+  payments: PaymentRecord[];
 }

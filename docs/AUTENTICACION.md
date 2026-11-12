@@ -37,7 +37,7 @@ recuperación, no volver a ejecutar el comando para sobrescribirla.
 | Listado de clientes y sus correos                  | Sí             | Sí             | No                     |
 | Registrar, editar y archivar clientes/mascotas     | Sí             | Sí             | No                     |
 | Inventario y precios                               | Sí             | Sí             | No                     |
-| Ventas (en preparación)                            | Sí             | Sí             | No                     |
+| Ventas y registro de cobros                        | Sí             | Sí             | No                     |
 | Ruta de reportes (en preparación)                  | Sí             | No             | No                     |
 | Programar/reprogramar citas y registrar asistencia | Sí             | Sí             | No                     |
 | Consultar historia y notas de atención             | Sí             | No             | Sí                     |
@@ -49,10 +49,11 @@ el listado de contactos ni los datos comerciales. El resumen de su API omite
 las filas de clientes y productos, y oculta el agregado de productos (`null`).
 En esta etapa, los tres roles autorizados pueden consultar los pacientes y citas
 de la misma sede; no se restringen a un profesional asignado. No hay separación
-entre clínicas. Las rutas todavía no implementadas no publican datos de reportes,
-compras o ventas. El [bloque 5](AGENDA-Y-ATENCION.md) aplica permisos de agenda y de atención por operación. El [bloque 6](SEGUIMIENTOS-Y-CONTACTOS.md) limita las tareas del veterinario a las asignadas a su cuenta y reserva los contactos a administración y recepción.
+entre clínicas. La ruta de reportes sigue en preparación. El [bloque 5](AGENDA-Y-ATENCION.md) aplica permisos de agenda y de atención por operación. El [bloque 6](SEGUIMIENTOS-Y-CONTACTOS.md) limita las tareas del veterinario a las asignadas a su cuenta y reserva los contactos a administración y recepción.
 
 El [bloque 7](INVENTARIO-Y-COMPRAS.md) permite a administración y recepción consultar inventario y gestionar proveedores/compras. Solo administración mantiene el catálogo y registra ajustes de stock.
+
+El [bloque 8](VENTAS-Y-COBROS.md) reserva ventas, cobros y búsquedas comerciales a administración y recepción; los precios y el actor del cobro se determinan en el servidor.
 
 El servidor consulta rol, actividad y habilitación de acceso en cada petición.
 Cambiar/desactivar una cuenta en la base afecta sus peticiones siguientes.
