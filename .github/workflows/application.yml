@@ -40,3 +40,27 @@ jobs:
           name: browser-test-results
           path: test-results/
           retention-days: 7
+
+  operations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: docker build -f deploy/Dockerfile --target api -t nexovet-api:operations .
+      - run: docker build -f deploy/Dockerfile --target web -t nexovet-web:operations .
+      - run: npm run test:operations
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: operations-test-results
+          path: |
+            .local/operations-*/commands.log
+            .local/operations-*/reports-https.png
+          include-hidden-files: true
+          retention-days: 3

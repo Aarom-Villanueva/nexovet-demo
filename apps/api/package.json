@@ -11,9 +11,10 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
     "test": "tsx --test test/api.test.ts",
-    "test:db": "tsx --test --test-concurrency=1 test/database.test.ts test/auth.test.ts test/patients.test.ts test/agenda.test.ts test/follow-ups.test.ts test/inventory.test.ts test/sales.test.ts test/management.test.ts",
+    "test:db": "tsx --test --test-concurrency=1 test/database.test.ts test/auth.test.ts test/patients.test.ts test/agenda.test.ts test/follow-ups.test.ts test/inventory.test.ts test/sales.test.ts test/management.test.ts test/operations.test.ts",
     "auth:demo-users": "tsx src/auth/demo-users.ts",
-    "auth:create-user": "tsx src/auth/create-user.ts"
+    "auth:create-user": "tsx src/auth/create-user.ts",
+    "db:initialize": "tsx src/db/setup.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.5",

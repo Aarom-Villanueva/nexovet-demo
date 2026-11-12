@@ -1,0 +1,20 @@
+{$SITE_ADDRESS} {
+	encode zstd gzip
+	header {
+		defer
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+	}
+	@api path /api /api/*
+	handle @api {
+		reverse_proxy api:3001
+	}
+	handle {
+		root * /srv
+		# El HTML de entrada nunca queda retenido al actualizar la aplicación.
+		header Cache-Control no-cache
+		try_files {path} /index.html
+		file_server
+	}
+}

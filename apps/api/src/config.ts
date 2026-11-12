@@ -10,6 +10,7 @@ const schema = z.object({
     .refine((value) => /^postgres(ql)?:/.test(value), 'Use una URL de PostgreSQL'),
   API_HOST: z.string().default('127.0.0.1'),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(1).default(0),
   ENABLE_DEMO: z.enum(['true', 'false']).default('false'),
   APP_ORIGIN: z.url().default('http://localhost:5173'),
   MAIL_DELIVERY: z.enum(['local', 'smtp']).default('local'),

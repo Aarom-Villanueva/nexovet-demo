@@ -73,3 +73,27 @@ test('configuración y semilla impiden producción y bases ajenas', () => {
     }),
   );
 });
+
+test('proxy confía solo en el salto configurado; acceso directo ignora cabeceras de IP', async () => {
+  for (const hops of [0, 1] as const) {
+    const app = buildApp({
+      trustedProxyHops: hops,
+      ready: async () => {},
+      overview: async () => null,
+    });
+    app.get('/probe-ip', async (r) => ({ ip: r.ip }));
+    try {
+      const response = await app.inject({
+        url: '/probe-ip',
+        remoteAddress: '127.0.0.1',
+        headers: { 'x-forwarded-for': '198.51.100.9, 203.0.113.7' },
+      });
+      assert.equal(response.json().ip, hops === 1 ? '203.0.113.7' : '127.0.0.1');
+    } finally {
+      await app.close();
+    }
+  }
+  assert.throws(() =>
+    parseConfig({ DATABASE_URL: 'postgres://localhost/nexovet', TRUST_PROXY_HOPS: '2' }),
+  );
+});

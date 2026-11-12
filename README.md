@@ -1,6 +1,6 @@
 # NexoVet — Demo interactiva
 
-## Aplicación en desarrollo — bloques 1 a 9
+## Aplicación en desarrollo — bloques 1 a 10
 
 La nueva aplicación está en `apps/web` (React + TypeScript) y `apps/api`
 (Node.js + Fastify), con PostgreSQL en `database/`. Incluye migraciones,
@@ -16,6 +16,7 @@ La demo estática de esta carpeta continúa siendo la referencia visual publicad
 - [Inventario y compras](docs/INVENTARIO-Y-COMPRAS.md)
 - [Ventas y cobros](docs/VENTAS-Y-COBROS.md)
 - [Reportes y administración](docs/REPORTES-Y-ADMINISTRACION.md)
+- [Despliegue y respaldos](docs/DESPLIEGUE-Y-RESPALDOS.md)
 - [Plan de los diez bloques](docs/PLAN.md)
 
 El bloque 3 añade login, sesiones, recuperación de contraseña y permisos en la API.
@@ -27,6 +28,9 @@ proveedores, ajustes y recepción de compras que ingresa stock. Ventas permite
 registrar productos/servicios y confirmar cobros completos con salidas transaccionales.
 Administración incorpora reportes por período con CSV, configuración del negocio,
 servicios/categorías, cuentas del equipo y consulta de auditoría.
+El despliegue incluye contenedores, HTTPS, inicialización sin datos ficticios y
+respaldo/restauración hacia una base nueva. La publicación real requiere servidor,
+dominio y SMTP configurados por el responsable.
 Consulta [Autenticación](docs/AUTENTICACION.md) para crear accesos locales y configurar correo.
 
 ---
