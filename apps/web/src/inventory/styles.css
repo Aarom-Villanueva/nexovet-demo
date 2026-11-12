@@ -177,3 +177,34 @@
     align-items: stretch;
   }
 }
+
+.purchase-document table {
+  min-width: 0;
+  table-layout: fixed;
+  width: 100%;
+}
+.purchase-document th,
+.purchase-document td {
+  padding: 14px 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.purchase-document th:first-child,
+.purchase-document td:first-child {
+  width: 36%;
+}
+.purchase-document th:nth-child(2),
+.purchase-document td:nth-child(2) {
+  width: 16%;
+}
+.purchase-document th:nth-child(3),
+.purchase-document td:nth-child(3),
+.purchase-document th:nth-child(4),
+.purchase-document td:nth-child(4) {
+  width: 24%;
+}
+@media (max-width: 760px) {
+  .purchase-document table {
+    min-width: 520px;
+  }
+}

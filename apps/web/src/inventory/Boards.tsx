@@ -462,22 +462,24 @@ function PurchaseDetails({
           </span>
         </div>
         {record.note && <p className="stock-note">{record.note}</p>}
-        <Table headers={['Producto', 'Cantidad', 'Costo unitario', 'Importe']}>
-          {record.lines.map((l) => (
-            <tr key={l.id}>
-              <td>
-                <strong>{l.productName}</strong>
-                <small className="table-secondary">
-                  {l.sku}
-                  {!l.productActive ? ' · Archivado' : ''}
-                </small>
-              </td>
-              <td>{units(l.quantity)}</td>
-              <td>{money(l.unitCost)}</td>
-              <td>{money(l.lineTotal)}</td>
-            </tr>
-          ))}
-        </Table>
+        <div className="purchase-document">
+          <Table headers={['Producto', 'Cantidad', 'Costo unitario', 'Importe']}>
+            {record.lines.map((l) => (
+              <tr key={l.id}>
+                <td>
+                  <strong>{l.productName}</strong>
+                  <small className="table-secondary">
+                    {l.sku}
+                    {!l.productActive ? ' · Archivado' : ''}
+                  </small>
+                </td>
+                <td>{units(l.quantity)}</td>
+                <td>{money(l.unitCost)}</td>
+                <td>{money(l.lineTotal)}</td>
+              </tr>
+            ))}
+          </Table>
+        </div>
         <p className="purchase-total">
           Total de productos <strong>{money(record.total)}</strong>
         </p>
