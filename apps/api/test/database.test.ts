@@ -55,7 +55,14 @@ test('migrar y sembrar dos veces preserva filas, saldo y accesos existentes', as
   assert.deepEqual(after.rows, before.rows);
   assert.equal(before.rows[0].clients, '320');
   assert.equal(before.rows[0].pets, '400');
-  assert.equal((await pool.query('SELECT count(*) FROM products')).rows[0].count, '320');
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT count(*) FROM products WHERE id IN (SELECT md5('product:'||i)::uuid FROM generate_series(1,320) i)",
+      )
+    ).rows[0].count,
+    '320',
+  );
   assert.deepEqual(
     (await pool.query('SELECT id,password_hash,login_enabled FROM users ORDER BY id')).rows,
     accessBefore,

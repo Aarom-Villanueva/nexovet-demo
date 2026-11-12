@@ -6,6 +6,7 @@ import './styles.css';
 import './patients/styles.css';
 import './agenda/styles.css';
 import './follow-ups/styles.css';
+import './inventory/styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

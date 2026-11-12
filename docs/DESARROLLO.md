@@ -41,6 +41,8 @@ No cargar información real antes de completar y desplegar la aplicación.
 Resumen, agenda por día/semana, directorio de clientes y mascotas, inventario y seguimiento.
 [El bloque 6](SEGUIMIENTOS-Y-CONTACTOS.md) añade tareas por responsable, vencimientos
 y contactos manuales con reintentos que evitan duplicados; no envía comunicaciones.
+[El bloque 7](INVENTARIO-Y-COMPRAS.md) permite mantener el catálogo y proveedores,
+registrar ajustes justificados y recibir compras con entradas transaccionales.
 [El bloque 4](CLIENTES-Y-MASCOTAS.md) permite registrar, editar, buscar y archivar
 fichas. Administrador y recepción escriben; veterinario solo consulta pacientes.
 [El bloque 5](AGENDA-Y-ATENCION.md) conecta las citas con el registro de atención
@@ -105,6 +107,10 @@ y se conservan sus registros de auditoría. Las pruebas de fichas limpian única
 los clientes y mascotas que ellas crean, sin borrar su auditoría; no modifican
 fichas de la semilla. La prueba concurrente deja
 asientos de prueba compensados en la base de test, sin modificar el saldo final.
+Las pruebas de inventario conservan su libro inmutable: compensan los saldos de
+sus productos propios y archivan las fichas; no borran documentos finalizados.
+Las pruebas de atención crean además un veterinario sintético por ejecución para
+no competir con citas de la semilla según la hora del día; se desactiva al terminar.
 El flujo de GitHub Actions ejecuta estas verificaciones en cada pull request.
 
 ```sh

@@ -37,7 +37,7 @@ recuperación, no volver a ejecutar el comando para sobrescribirla.
 | Listado de clientes y sus correos                  | Sí             | Sí             | No                     |
 | Registrar, editar y archivar clientes/mascotas     | Sí             | Sí             | No                     |
 | Inventario y precios                               | Sí             | Sí             | No                     |
-| Rutas de compras y ventas (en preparación)         | Sí             | Sí             | No                     |
+| Ventas (en preparación)                            | Sí             | Sí             | No                     |
 | Ruta de reportes (en preparación)                  | Sí             | No             | No                     |
 | Programar/reprogramar citas y registrar asistencia | Sí             | Sí             | No                     |
 | Consultar historia y notas de atención             | Sí             | No             | Sí                     |
@@ -51,6 +51,8 @@ En esta etapa, los tres roles autorizados pueden consultar los pacientes y citas
 de la misma sede; no se restringen a un profesional asignado. No hay separación
 entre clínicas. Las rutas todavía no implementadas no publican datos de reportes,
 compras o ventas. El [bloque 5](AGENDA-Y-ATENCION.md) aplica permisos de agenda y de atención por operación. El [bloque 6](SEGUIMIENTOS-Y-CONTACTOS.md) limita las tareas del veterinario a las asignadas a su cuenta y reserva los contactos a administración y recepción.
+
+El [bloque 7](INVENTARIO-Y-COMPRAS.md) permite a administración y recepción consultar inventario y gestionar proveedores/compras. Solo administración mantiene el catálogo y registra ajustes de stock.
 
 El servidor consulta rol, actividad y habilitación de acceso en cada petición.
 Cambiar/desactivar una cuenta en la base afecta sus peticiones siguientes.

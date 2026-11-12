@@ -112,3 +112,15 @@ Los cambios de estado, el alta/cierre de la atención y su auditoría se realiza
 transaccionalmente. Las restricciones de exclusión de la migración 001 siguen
 siendo la autoridad final frente a cruces concurrentes. Ver reglas, permisos y
 límites en [AGENDA-Y-ATENCION.md](AGENDA-Y-ATENCION.md).
+
+## Ampliaciones de los bloques 6 y 7
+
+`005_follow_ups.sql` incorpora versiones de tareas e idempotencia de contactos. Ver
+[SEGUIMIENTOS-Y-CONTACTOS.md](SEGUIMIENTOS-Y-CONTACTOS.md).
+
+`006_inventory_purchases.sql` añade versiones de catálogo/proveedores/compras,
+solicitudes idempotentes de compra/ajuste, secuencia de números y datos visibles
+conservados en la recepción. Protege cabeceras y líneas finalizadas. Las entradas
+por recepción, su estado y auditoría se confirman en una transacción; el saldo
+continúa derivándose del libro inmutable. Detalles y límites en
+[INVENTARIO-Y-COMPRAS.md](INVENTARIO-Y-COMPRAS.md).

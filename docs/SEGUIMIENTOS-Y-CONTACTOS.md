@@ -110,5 +110,5 @@ de borrador y reintento con una respuesta perdida después del guardado real.
 
 Se limpian únicamente contactos, tareas y pacientes creados por las pruebas, y se
 conserva su auditoría. No se modifica el contenido de las tareas de demostración.
-Quedan pendientes inventario/compras, ventas, reportes y despliegue operativo con
+El [bloque 7](INVENTARIO-Y-COMPRAS.md) incorpora inventario/compras. Quedan pendientes ventas, reportes y despliegue operativo con
 sus comprobaciones del bloque 10.

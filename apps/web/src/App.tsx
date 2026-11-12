@@ -24,6 +24,7 @@ import { AuthProvider, LoginPage, useAuth } from './auth';
 import { useOverview } from './useOverview';
 import { PatientDirectory } from './patients/Directory';
 import { Agenda } from './agenda/Agenda';
+import { InventoryBoard, PurchaseBoard } from './inventory/Boards';
 import { FollowupBoard } from './follow-ups/Board';
 import { Appointments, date, labels, money, SectionTitle, Status, Table } from './components';
 
@@ -240,42 +241,12 @@ function DataViews({ data }: { data: DemoOverview }) {
       <Route path="/" element={<Overview data={data} />} />
       <Route path="/agenda" element={<Agenda />} />
       <Route path="/clientes" element={<PatientDirectory />} />
-      <Route
-        path="/inventario"
-        element={
-          <section className="panel">
-            <SectionTitle
-              title="Inventario"
-              subtitle="Productos ficticios. Existencias calculadas a partir de sus movimientos."
-            />
-            <Table headers={['Código', 'Producto', 'Precio', 'Disponible', 'Estado']}>
-              {data.products.map((product) => (
-                <tr key={product.id}>
-                  <td className="code">{product.sku}</td>
-                  <td>
-                    <strong>{product.name}</strong>
-                  </td>
-                  <td>{money(product.price)}</td>
-                  <td>{Number(product.stock)}</td>
-                  <td>
-                    <span
-                      className={`status ${Number(product.stock) < Number(product.minimumStock) ? 'status-pending' : 'status-confirmed'}`}
-                    >
-                      {Number(product.stock) < Number(product.minimumStock)
-                        ? 'Stock bajo'
-                        : 'Disponible'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </Table>
-          </section>
-        }
-      />
+      <Route path="/inventario" element={<InventoryBoard />} />
+      <Route path="/compras" element={<PurchaseBoard />} />
       <Route path="/seguimiento" element={<FollowupBoard />} />
       <Route path="/administracion" element={<UserAccounts />} />
       {navigation
-        .slice(5)
+        .slice(6)
         .filter((item) => item.to !== '/administracion')
         .map((item) => (
           <Route key={item.to} path={item.to} element={<ComingSoon title={item.label} />} />
