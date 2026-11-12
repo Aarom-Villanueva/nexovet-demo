@@ -5,6 +5,7 @@ import { App } from './App';
 import './styles.css';
 import './patients/styles.css';
 import './agenda/styles.css';
+import './follow-ups/styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

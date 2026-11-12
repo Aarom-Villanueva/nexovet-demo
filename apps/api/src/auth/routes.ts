@@ -16,6 +16,7 @@ import {
 import type { SendResetMail, ResetMail } from './mail.js';
 import { registerPatients } from '../patients/routes.js';
 import { registerAgenda } from '../agenda/routes.js';
+import { registerFollowups } from '../follow-ups/routes.js';
 
 interface Identity {
   user: AuthUser;
@@ -32,7 +33,7 @@ export interface AuthOptions {
   pool: Pool;
   config: Config;
   sendMail: SendResetMail;
-  overview: (role: Role) => Promise<DemoOverview | null>;
+  overview: (role: Role, userId?: string) => Promise<DemoOverview | null>;
 }
 const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
 export const passwordSchema = z.string().min(12).max(128);
@@ -323,7 +324,7 @@ export async function registerAuth(app: FastifyInstance, options: AuthOptions) {
   });
   async function overview(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const data = await options.overview(request.identity!.user.role);
+      const data = await options.overview(request.identity!.user.role, request.identity!.user.id);
       if (!data)
         return reply.code(409).send({ message: 'La veterinaria todavía no está configurada.' });
       return data;
@@ -354,4 +355,5 @@ export async function registerAuth(app: FastifyInstance, options: AuthOptions) {
   );
   await registerPatients(app, { pool, requireSession, requireWrite, permit });
   await registerAgenda(app, { pool, requireSession, requireWrite, permit });
+  await registerFollowups(app, { pool, requireSession, requireWrite, permit });
 }

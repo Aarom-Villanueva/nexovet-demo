@@ -12,7 +12,7 @@ const app = buildApp({
   ready: async () => {
     await pool.query('SELECT 1 FROM business_settings LIMIT 1');
   },
-  overview: (role) => getDemoOverview(pool, role),
+  overview: (role, userId) => getDemoOverview(pool, role, userId),
   auth: { pool, config, sendMail: createMailer(config) },
 });
 app.addHook('onClose', async () => {

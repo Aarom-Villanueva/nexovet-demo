@@ -39,6 +39,8 @@ No cargar información real antes de completar y desplegar la aplicación.
 ## Qué puedes recorrer
 
 Resumen, agenda por día/semana, directorio de clientes y mascotas, inventario y seguimiento.
+[El bloque 6](SEGUIMIENTOS-Y-CONTACTOS.md) añade tareas por responsable, vencimientos
+y contactos manuales con reintentos que evitan duplicados; no envía comunicaciones.
 [El bloque 4](CLIENTES-Y-MASCOTAS.md) permite registrar, editar, buscar y archivar
 fichas. Administrador y recepción escriben; veterinario solo consulta pacientes.
 [El bloque 5](AGENDA-Y-ATENCION.md) conecta las citas con el registro de atención

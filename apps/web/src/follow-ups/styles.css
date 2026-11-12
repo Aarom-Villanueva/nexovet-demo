@@ -1,0 +1,183 @@
+.followup-page .button {
+  margin-top: 0;
+}
+.followup-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.followup-metrics article {
+  border: 1px solid #e2eae0;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+}
+.followup-metrics article > span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #7a8e7a;
+  font-size: 11px;
+}
+.followup-metrics strong {
+  display: block;
+  font-family: Manrope, system-ui, sans-serif;
+  color: #36523b;
+  margin-top: 17px;
+  font-size: 27px;
+}
+.followup-page table {
+  min-width: 840px;
+}
+.followup-page .directory-status {
+  min-width: 110px;
+}
+.followup-page .directory-search > .search-input {
+  flex-basis: 280px;
+}
+.followup-overdue {
+  background: #fbefdf;
+  color: #a87c43;
+}
+.followup-space {
+  margin-top: 25px;
+}
+.followup-subtitle {
+  font-size: 14px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e6ece1;
+}
+.followup-description {
+  border: 1px solid #e6eddf;
+  background: #f7faf3;
+  padding: 17px;
+  border-radius: 10px;
+}
+.followup-description h3 {
+  font-size: 12px;
+  color: #5e7951;
+}
+.followup-description p {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #75876a;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.contact-client {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  margin: 20px 0;
+  border: 1px solid #e3ebdb;
+  background: #f8faf3;
+  border-radius: 10px;
+  color: #5f814a;
+}
+.contact-client strong {
+  font-size: 13px;
+}
+.contact-client p {
+  font-size: 12px;
+  line-height: 1.7;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+.contact-client small {
+  color: #8e9a7f;
+  font-size: 10px;
+  margin-top: 8px;
+}
+.contact-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 10px 24px;
+}
+.contact-timeline li {
+  display: flex;
+  gap: 15px;
+  padding: 22px 0;
+  border-bottom: 1px solid #e9eee2;
+}
+.contact-timeline li > div {
+  min-width: 0;
+  flex: 1;
+}
+.contact-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #88a672;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.contact-event-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.contact-event-heading strong {
+  color: #4d7255;
+  font-size: 13px;
+}
+.contact-event-heading span {
+  color: #80936b;
+  background: #f0f5e9;
+  padding: 4px 8px;
+  font-size: 10px;
+  border-radius: 5px;
+}
+.contact-timeline p {
+  font-size: 12px;
+  color: #708468;
+  line-height: 1.7;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.contact-timeline small {
+  font-size: 10px;
+  color: #96a187;
+}
+.contact-timeline p.contact-note {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fafbf6;
+  color: #718364;
+  white-space: pre-wrap;
+}
+.followup-actions {
+  flex-wrap: wrap;
+}
+@media (max-width: 760px) {
+  .followup-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .followup-metrics article {
+    padding: 15px;
+  }
+  .followup-metrics article > span {
+    font-size: 10px;
+    line-height: 1.5;
+    align-items: start;
+  }
+  .followup-page .directory-heading > .button {
+    width: 100%;
+    justify-content: center;
+  }
+  .followup-metrics strong {
+    font-size: 25px;
+  }
+  .contact-timeline {
+    padding-inline: 4px;
+  }
+  .followup-actions > button {
+    flex: 1;
+    justify-content: center;
+  }
+}

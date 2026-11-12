@@ -151,5 +151,5 @@ Fuera de alcance: reserva pública, avisos automáticos, cobro/facturación, con
 de inventario, recetas emitidas como documentos, carnet de vacunas, adjuntos,
 adendas/reapertura clínica e integraciones externas. Las tablas de recetas y vacunas
 reservadas en el modelo todavía no tienen un flujo operativo en la interfaz.
-El siguiente bloque incorpora seguimientos y registro de contactos. El despliegue
+El [bloque 6](SEGUIMIENTOS-Y-CONTACTOS.md) incorpora seguimientos y registro manual de contactos desde fichas y atenciones cerradas. El despliegue
 con datos reales requiere completar los bloques restantes y verificar el bloque 10.

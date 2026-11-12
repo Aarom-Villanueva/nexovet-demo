@@ -7,7 +7,7 @@ interface Options {
   enableDemo?: boolean;
   logger?: boolean;
   ready: () => Promise<void>;
-  overview: (role: Role) => Promise<DemoOverview | null>;
+  overview: (role: Role, userId?: string) => Promise<DemoOverview | null>;
   auth?: Omit<AuthOptions, 'overview'>;
 }
 export function buildApp(options: Options) {

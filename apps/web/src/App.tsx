@@ -24,6 +24,7 @@ import { AuthProvider, LoginPage, useAuth } from './auth';
 import { useOverview } from './useOverview';
 import { PatientDirectory } from './patients/Directory';
 import { Agenda } from './agenda/Agenda';
+import { FollowupBoard } from './follow-ups/Board';
 import { Appointments, date, labels, money, SectionTitle, Status, Table } from './components';
 
 const navigation = [
@@ -271,31 +272,7 @@ function DataViews({ data }: { data: DemoOverview }) {
           </section>
         }
       />
-      <Route
-        path="/seguimiento"
-        element={
-          <section className="panel">
-            <SectionTitle
-              title="Seguimiento"
-              subtitle="Tareas de ejemplo. El registro de contactos estará disponible más adelante."
-            />
-            <Table headers={['Tarea', 'Cliente', 'Fecha', 'Estado']}>
-              {data.tasks.map((task) => (
-                <tr key={task.id}>
-                  <td>
-                    <strong>{task.title}</strong>
-                  </td>
-                  <td>{task.client}</td>
-                  <td>{date(task.dueAt)}</td>
-                  <td>
-                    <Status value={task.status} />
-                  </td>
-                </tr>
-              ))}
-            </Table>
-          </section>
-        }
-      />
+      <Route path="/seguimiento" element={<FollowupBoard />} />
       <Route path="/administracion" element={<UserAccounts />} />
       {navigation
         .slice(5)

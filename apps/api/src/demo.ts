@@ -5,6 +5,7 @@ import type { Pool } from 'pg';
 export async function getDemoOverview(
   pool: Pool,
   role: Role = 'admin',
+  userId?: string,
 ): Promise<DemoOverview | null> {
   const client = await pool.connect();
   try {
@@ -23,8 +24,8 @@ export async function getDemoOverview(
       (SELECT count(*)::int FROM pets) AS pets,
       (SELECT count(*)::int FROM products) AS products,
       (SELECT count(*)::int FROM appointments WHERE (starts_at AT TIME ZONE 'America/Lima')::date=$1::date) AS "appointmentsToday",
-      (SELECT count(*)::int FROM follow_up_tasks WHERE status='pending') AS "pendingTasks"`,
-      [today],
+      (SELECT count(*)::int FROM follow_up_tasks WHERE status='pending' AND ($2<>'veterinarian' OR assigned_to=$3::uuid)) AS "pendingTasks"`,
+      [today, role, userId ?? null],
     );
     const appointments = await client.query<DemoOverview['appointments'][number]>(
       `SELECT a.id,p.name AS pet,c.name AS owner,s.name AS service,u.name AS professional,a.starts_at::text AS "startsAt",a.status
@@ -48,7 +49,8 @@ export async function getDemoOverview(
             'SELECT p.id,p.sku,p.name,p.sale_price::text AS price,s.quantity::text AS stock,p.minimum_stock::text AS "minimumStock" FROM products p JOIN product_stock s ON s.product_id=p.id ORDER BY p.sku LIMIT 12',
           );
     const tasks = await client.query<DemoOverview['tasks'][number]>(
-      'SELECT t.id,t.title,c.name AS client,t.due_at::text AS "dueAt",t.status FROM follow_up_tasks t JOIN clients c ON c.id=t.client_id ORDER BY t.due_at,t.id LIMIT 12',
+      'SELECT t.id,t.title,c.name AS client,t.due_at::text AS "dueAt",t.status FROM follow_up_tasks t JOIN clients c ON c.id=t.client_id WHERE ($1<>\'veterinarian\' OR t.assigned_to=$2::uuid) ORDER BY t.due_at,t.id LIMIT 12',
+      [role, userId ?? null],
     );
     await client.query('COMMIT');
     return {
