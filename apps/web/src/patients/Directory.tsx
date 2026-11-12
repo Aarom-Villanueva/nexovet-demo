@@ -23,6 +23,9 @@ import { useAuth } from '../auth';
 import { useApi } from '../api';
 import { ClientForm, PetForm, Dialog } from './Forms';
 import { HistoryDialog } from '../agenda/Care';
+import { FollowupForm, ContactForm } from '../follow-ups/Forms';
+import { ContactHistoryDialog } from '../follow-ups/Board';
+import type { FollowupTarget } from '@nexovet/shared';
 
 function useRead<T>(url: string, attempt = 0) {
   const api = useApi();
@@ -106,12 +109,18 @@ function ClientDetails({
   onEdit,
   onAddPet,
   onPet,
+  onFollowup,
+  onContacts,
+  onContact,
 }: {
   client: ClientRecord;
   onClose: () => void;
   onEdit: () => void;
   onAddPet: () => void;
   onPet: (id: string) => void;
+  onFollowup: () => void;
+  onContacts: () => void;
+  onContact: () => void;
 }) {
   const [page, setPage] = useState(1);
   const [attempt, setAttempt] = useState(0);
@@ -197,7 +206,18 @@ function ClientDetails({
           </>
         )}
       </div>
-      <div className="record-dialog-actions">
+      <div className="record-dialog-actions followup-actions">
+        {client.active && (
+          <button className="button" onClick={onFollowup}>
+            Nuevo seguimiento
+          </button>
+        )}
+        <button className="secondary-button" onClick={onContacts}>
+          Historial de contactos
+        </button>
+        <button className="secondary-button" onClick={onContact}>
+          Registrar contacto
+        </button>
         <button className="secondary-button" onClick={onClose}>
           Cerrar
         </button>
@@ -210,11 +230,13 @@ function PetDetails({
   onClose,
   onEdit,
   onHistory,
+  onFollowup,
 }: {
   pet: PetRecord;
   onClose: () => void;
   onEdit?: () => void;
   onHistory?: () => void;
+  onFollowup?: () => void;
 }) {
   return (
     <Dialog title={pet.name} onClose={onClose}>
@@ -253,7 +275,12 @@ function PetDetails({
           <p>{pet.allergies ?? 'Sin información registrada.'}</p>
         </div>
       </div>
-      <div className="record-dialog-actions">
+      <div className="record-dialog-actions followup-actions">
+        {onFollowup && (
+          <button className="secondary-button" onClick={onFollowup}>
+            Nuevo seguimiento
+          </button>
+        )}
         {onHistory && (
           <button className="button" onClick={onHistory}>
             Historia clínica
@@ -271,7 +298,9 @@ type OpenDialog =
   | { kind: 'clientDetails'; record: ClientRecord }
   | { kind: 'petForm'; record?: PetRecord; owner?: ClientRecord }
   | { kind: 'petDetails'; record: PetRecord }
-  | { kind: 'petHistory'; record: PetRecord };
+  | { kind: 'petHistory'; record: PetRecord }
+  | { kind: 'followup'; target: FollowupTarget }
+  | { kind: 'contacts' | 'contact'; record: ClientRecord };
 export function PatientDirectory() {
   const auth = useAuth();
   const api = useApi();
@@ -620,12 +649,39 @@ export function PatientDirectory() {
           onEdit={() => setDialog({ kind: 'clientForm', record: dialog.record })}
           onAddPet={() => setDialog({ kind: 'petForm', owner: dialog.record })}
           onPet={(id) => void openPet(id)}
+          onFollowup={() =>
+            setDialog({
+              kind: 'followup',
+              target: {
+                clientId: dialog.record.id,
+                clientName: dialog.record.name,
+                petId: null,
+                petName: null,
+              },
+            })
+          }
+          onContacts={() => setDialog({ kind: 'contacts', record: dialog.record })}
+          onContact={() => setDialog({ kind: 'contact', record: dialog.record })}
         />
       )}
       {dialog?.kind === 'petDetails' && (
         <PetDetails
           pet={dialog.record}
           onClose={() => setDialog(null)}
+          onFollowup={
+            dialog.record.active && dialog.record.ownerActive
+              ? () =>
+                  setDialog({
+                    kind: 'followup',
+                    target: {
+                      clientId: dialog.record.clientId,
+                      clientName: dialog.record.ownerName,
+                      petId: dialog.record.id,
+                      petName: dialog.record.name,
+                    },
+                  })
+              : undefined
+          }
           onHistory={
             auth.session!.user.role !== 'reception'
               ? () => setDialog({ kind: 'petHistory', record: dialog.record })
@@ -639,6 +695,34 @@ export function PatientDirectory() {
           petId={dialog.record.id}
           petName={dialog.record.name}
           onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.kind === 'followup' && (
+        <FollowupForm
+          target={dialog.target}
+          onClose={() => setDialog(null)}
+          onSaved={() => {
+            setDialog(null);
+            setNotice('Seguimiento programado correctamente.');
+          }}
+        />
+      )}
+      {dialog?.kind === 'contacts' && (
+        <ContactHistoryDialog
+          clientId={dialog.record.id}
+          clientName={dialog.record.name}
+          onClose={() => setDialog(null)}
+          onNew={() => setDialog({ kind: 'contact', record: dialog.record })}
+        />
+      )}
+      {dialog?.kind === 'contact' && (
+        <ContactForm
+          clientId={dialog.record.id}
+          onClose={() => setDialog({ kind: 'clientDetails', record: dialog.record })}
+          onSaved={() => {
+            setDialog({ kind: 'contacts', record: dialog.record });
+            setNotice('Contacto registrado correctamente.');
+          }}
         />
       )}
     </section>

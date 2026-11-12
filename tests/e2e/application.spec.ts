@@ -32,6 +32,22 @@ test.beforeAll(async () => {
     await pool.end();
   }
 });
+// Cada caso empieza sin bloqueos heredados de las cuentas sintéticas de esta suite.
+// No cambia los límites de la API ni elimina los de otras cuentas.
+test.beforeEach(async () => {
+  const { default: pg } = await import('pg');
+  const pool = new pg.Pool({ connectionString: databaseUrl });
+  try {
+    if (!(await pool.query('SELECT 1 FROM business_settings WHERE is_demo')).rowCount)
+      throw new Error('E2E requiere una veterinaria ficticia');
+    const keys = credentials.accounts.map((account) =>
+      createHash('sha256').update(`login:email:${account.email}`).digest('hex'),
+    );
+    await pool.query('DELETE FROM auth_rate_limits WHERE key=ANY($1::text[])', [keys]);
+  } finally {
+    await pool.end();
+  }
+});
 async function login(page: Page, role = 'admin') {
   const account = credentials.accounts.find((account) => account.role === role)!;
   await page.goto('/');
@@ -223,6 +239,12 @@ test.afterAll(async () => {
   const { default: pg } = await import('pg');
   const pool = new pg.Pool({ connectionString: databaseUrl });
   try {
+    await pool.query('DELETE FROM contact_events WHERE client_id=ANY($1::uuid[])', [
+      createdClients,
+    ]);
+    await pool.query('DELETE FROM follow_up_tasks WHERE client_id=ANY($1::uuid[])', [
+      createdClients,
+    ]);
     await pool.query('DELETE FROM encounters WHERE appointment_id=ANY($1::uuid[])', [
       createdAppointments,
     ]);
@@ -665,6 +687,21 @@ test('atención: recepción registra llegada; veterinario guarda y cierra; histo
   await dialog.getByRole('button', { name: 'Cerrar atención', exact: true }).click();
   await expect(dialog.getByText('Atención cerrada', { exact: true })).toBeVisible();
   await expect(dialog.getByLabel('Evaluación / diagnóstico', { exact: true })).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Programar seguimiento', exact: true }).click();
+  await dialog
+    .getByLabel('Qué hay que hacer *', { exact: true })
+    .fill('Control posterior a consulta ficticia');
+  const followupSaved = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/follow-ups') && response.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Crear seguimiento', exact: true }).click();
+  const followupResponse = await followupSaved;
+  expect(followupResponse.status()).toBe(201);
+  const followup = await followupResponse.json();
+  expect(followup.petId).toBe(patient.id);
+  expect(followup.assignedTo).toBe(agendaDoctor.id);
+  await expect(dialog.getByText('Atención cerrada', { exact: true })).toBeVisible();
   const persisted = await (await page.request.get(`/api/appointments/${record.id}`)).json();
   expect(persisted.status).toBe('completed');
   await page.reload();
@@ -761,5 +798,262 @@ test('agenda: muestra fallo de lectura y permite reintentar sin inventar citas',
   await expect(
     page.getByRole('heading', { name: 'Visitas programadas', exact: true }),
   ).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+async function fixtureFollowup(
+  page: Page,
+  patient: { id: string; clientId: string },
+  extra: object = {},
+) {
+  const response = await writeFromBrowser(page, '/api/follow-ups', {
+    clientId: patient.clientId,
+    petId: patient.id,
+    assignedTo: null,
+    title: `Control E2E ${randomUUID().slice(0, 8)}`,
+    description: 'Gestión ficticia para la prueba',
+    date: '2040-04-07',
+    time: '10:30',
+    ...extra,
+  });
+  expect(response.status()).toBe(201);
+  return response.json();
+}
+async function openFollowup(page: Page, task: { title: string }) {
+  await page.goto(`/seguimiento?q=${encodeURIComponent(task.title)}&status=all`);
+  await page.getByRole('button', { name: `Abrir seguimiento ${task.title}`, exact: true }).click();
+}
+async function saveContact(page: Page) {
+  const pending = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/contact-events') && response.request().method() === 'POST',
+  );
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Guardar contacto', exact: true })
+    .click();
+  const response = await pending;
+  expect(response.status()).toBe(201);
+  return response.json();
+}
+test('seguimientos: recepción busca paciente, asigna, reprograma y completa con persistencia', async ({
+  page,
+}) => {
+  await login(page, 'reception');
+  const patient = await fixtureAgendaPatient(page);
+  await page.goto('/seguimiento');
+  await page.getByRole('button', { name: 'Nuevo seguimiento', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Buscar mascota *', { exact: true }).fill(patient.name);
+  await dialog
+    .getByRole('button', { name: `Seleccionar seguimiento de ${patient.name}`, exact: true })
+    .click();
+  const title = `Coordinación E2E ${randomUUID().slice(0, 8)}`;
+  await dialog.getByLabel('Qué hay que hacer *', { exact: true }).fill(title);
+  await dialog.getByLabel('Responsable del equipo', { exact: true }).selectOption(agendaDoctor.id);
+  await dialog.getByLabel('Fecha límite *', { exact: true }).fill('2040-04-08');
+  await dialog.getByLabel('Hora límite *', { exact: true }).fill('11:30');
+  const pending = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/follow-ups') && response.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Crear seguimiento', exact: true }).click();
+  const response = await pending;
+  expect(response.status()).toBe(201);
+  const task = await response.json();
+  expect(task.assignedTo).toBe(agendaDoctor.id);
+  await expect(page.getByRole('dialog', { name: title, exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Editar seguimiento', exact: true }).click();
+  await dialog.getByLabel('Fecha límite *', { exact: true }).fill('2040-04-09');
+  await dialog.getByRole('button', { name: 'Guardar seguimiento', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: title, exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Completar seguimiento', exact: true }).click();
+  await expect(dialog.getByText('Completado', { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByLabel('Estado del seguimiento', { exact: true }).selectOption('completed');
+  await page.getByRole('button', { name: `Abrir seguimiento ${title}`, exact: true }).click();
+  await expect(dialog.getByText('Completado', { exact: true })).toBeVisible();
+  const stored = await (await page.request.get(`/api/follow-ups/${task.id}`)).json();
+  expect(stored.date).toBe('2040-04-09');
+  expect(stored.version).toBe(3);
+});
+test('seguimientos: veterinario solo ve sus tareas y no tiene acceso a contactos', async ({
+  page,
+}) => {
+  await login(page, 'reception');
+  const patient = await fixtureAgendaPatient(page);
+  const own = await fixtureFollowup(page, patient, { assignedTo: agendaDoctor.id });
+  const hidden = await fixtureFollowup(page, patient);
+  await logoutUI(page);
+  await login(page, 'veterinarian');
+  await page.goto('/seguimiento?status=all');
+  await expect(page.getByRole('heading', { name: 'Mis seguimientos', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: `Abrir seguimiento ${own.title}`, exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(hidden.title, { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Contactos registrados', exact: true }),
+  ).toHaveCount(0);
+  expect((await page.request.get(`/api/follow-ups/${hidden.id}`)).status()).toBe(404);
+  expect((await page.request.get('/api/contact-events')).status()).toBe(403);
+  await page.getByRole('button', { name: `Abrir seguimiento ${own.title}`, exact: true }).click();
+  await expect(
+    page.getByRole('dialog').getByRole('button', { name: 'Registrar contacto', exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Completar seguimiento', exact: true })
+    .click();
+  await expect(page.getByRole('dialog').getByText('Completado', { exact: true })).toBeVisible();
+});
+test('contactos: sin respuesta conserva pendiente y contacto efectivo completa y aparece en la ficha', async ({
+  page,
+}) => {
+  await login(page, 'reception');
+  const patient = await fixtureAgendaPatient(page);
+  const task = await fixtureFollowup(page, patient);
+  await openFollowup(page, task);
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Registrar contacto', exact: true }).click();
+  await expect(
+    dialog.getByText('Sin autorización de contacto registrada', { exact: true }),
+  ).toBeVisible();
+  await dialog.getByLabel('Canal utilizado *', { exact: true }).selectOption('phone');
+  await dialog.getByLabel('Resultado *', { exact: true }).selectOption('no_answer');
+  await dialog
+    .getByLabel('Nota del contacto', { exact: true })
+    .fill('Intento ficticio, sin respuesta.');
+  await saveContact(page);
+  await expect(page.getByRole('dialog', { name: task.title, exact: true })).toBeVisible();
+  await expect(dialog.getByText('Pendiente', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Intento ficticio, sin respuesta.', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Registrar contacto', exact: true }).click();
+  await dialog.getByLabel('Canal utilizado *', { exact: true }).selectOption('whatsapp');
+  await dialog.getByLabel('Resultado *', { exact: true }).selectOption('contacted');
+  await dialog
+    .getByLabel('Nota del contacto', { exact: true })
+    .fill('Coordinación ficticia confirmada.');
+  await dialog.getByLabel('Marcar también el seguimiento como completado', { exact: true }).check();
+  await saveContact(page);
+  await expect(page.getByRole('dialog', { name: task.title, exact: true })).toBeVisible();
+  await expect(dialog.getByText('Completado', { exact: true })).toBeVisible();
+  await expect(
+    dialog.getByText('Coordinación ficticia confirmada.', { exact: true }),
+  ).toBeVisible();
+  const client = await (await page.request.get(`/api/clients/${patient.clientId}`)).json();
+  await page.goto(`/clientes?q=${encodeURIComponent(client.name)}`);
+  await page.getByRole('button', { name: `Ver ficha de ${client.name}`, exact: true }).click();
+  await dialog.getByRole('button', { name: 'Historial de contactos', exact: true }).click();
+  await expect(
+    dialog.getByText('Coordinación ficticia confirmada.', { exact: true }),
+  ).toBeVisible();
+  await expect(dialog.getByText('Intento ficticio, sin respuesta.', { exact: true })).toBeVisible();
+});
+test('contactos: respuesta perdida tras guardar permite reintento sin duplicar ni completar dos veces', async ({
+  page,
+}) => {
+  await login(page, 'reception');
+  const patient = await fixtureAgendaPatient(page);
+  const task = await fixtureFollowup(page, patient);
+  await openFollowup(page, task);
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Registrar contacto', exact: true }).click();
+  await dialog.getByLabel('Canal utilizado *', { exact: true }).selectOption('phone');
+  await dialog.getByLabel('Resultado *', { exact: true }).selectOption('contacted');
+  await dialog.getByLabel('Nota del contacto', { exact: true }).fill('Un único registro ficticio.');
+  await dialog.getByLabel('Marcar también el seguimiento como completado', { exact: true }).check();
+  await page.route('**/api/contact-events', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    const response = await route.fetch();
+    expect(response.status()).toBe(201);
+    await route.abort();
+  });
+  await dialog.getByRole('button', { name: 'Guardar contacto', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Tus cambios siguen en el formulario');
+  await expect(dialog.getByLabel('Nota del contacto', { exact: true })).toBeDisabled();
+  await expect(dialog.getByLabel('Nota del contacto', { exact: true })).toHaveValue(
+    'Un único registro ficticio.',
+  );
+  await page.unroute('**/api/contact-events');
+  const pending = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/contact-events') && response.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Reintentar registro', exact: true }).click();
+  const response = await pending;
+  expect(response.status()).toBe(201);
+  expect(response.headers()['idempotent-replay']).toBe('true');
+  await expect(page.getByRole('dialog', { name: task.title, exact: true })).toBeVisible();
+  await expect(dialog.getByText('Un único registro ficticio.', { exact: true })).toHaveCount(1);
+  const stored = await (await page.request.get(`/api/follow-ups/${task.id}`)).json();
+  expect(stored.contactCount).toBe(1);
+  expect(stored.version).toBe(2);
+});
+test('seguimientos móvil: programa desde mascota y conserva borrador ante edición simultánea', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page, 'reception');
+  const patient = await fixtureAgendaPatient(page);
+  await page.goto(`/clientes?tab=pets&q=${encodeURIComponent(patient.name)}`);
+  await page.getByRole('button', { name: `Ver ficha de ${patient.name}`, exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Nuevo seguimiento', exact: true }).click();
+  const title = `Móvil seguimiento ${randomUUID().slice(0, 8)}`;
+  await dialog.getByLabel('Qué hay que hacer *', { exact: true }).fill(title);
+  const pending = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/follow-ups') && response.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Crear seguimiento', exact: true }).click();
+  const response = await pending;
+  expect(response.status()).toBe(201);
+  const task = await response.json();
+  expect(task.petId).toBe(patient.id);
+  await expect(dialog).toHaveCount(0);
+  await openFollowup(page, task);
+  await dialog.getByRole('button', { name: 'Editar seguimiento', exact: true }).click();
+  await dialog
+    .getByLabel('Qué hay que hacer *', { exact: true })
+    .fill('Mi borrador de seguimiento');
+  const updated = await writeFromBrowser(
+    page,
+    `/api/follow-ups/${task.id}`,
+    {
+      title: 'Actualizado en otra sesión',
+      description: task.description,
+      date: task.date,
+      time: task.time,
+      assignedTo: null,
+      version: task.version,
+    },
+    'PUT',
+  );
+  expect(updated.status()).toBe(200);
+  await dialog.getByRole('button', { name: 'Guardar seguimiento', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Otra persona actualizó este seguimiento');
+  await expect(dialog.getByLabel('Qué hay que hacer *', { exact: true })).toHaveValue(
+    'Mi borrador de seguimiento',
+  );
+  await dialog.getByRole('button', { name: 'Recargar ficha actual', exact: true }).click();
+  await expect(dialog.getByLabel('Qué hay que hacer *', { exact: true })).toHaveValue(
+    'Actualizado en otra sesión',
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+test('seguimientos: un fallo de lectura se puede reintentar sin mostrar tareas inventadas', async ({
+  page,
+}) => {
+  await login(page);
+  await page.route('**/api/follow-ups?*', (route) =>
+    route.fulfill({ status: 503, json: { message: 'Seguimientos temporalmente no disponibles' } }),
+  );
+  await page.goto('/seguimiento');
+  await expect(page.getByRole('alert')).toContainText('Seguimientos temporalmente no disponibles');
+  await expect(page.getByRole('button', { name: /^Abrir seguimiento / })).toHaveCount(0);
+  await page.unroute('**/api/follow-ups?*');
+  await page.getByRole('button', { name: 'Intentar nuevamente', exact: true }).click();
+  await expect(page.getByRole('columnheader', { name: 'Seguimiento', exact: true })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });

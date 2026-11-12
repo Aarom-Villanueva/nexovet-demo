@@ -29,18 +29,20 @@ recuperación, no volver a ejecutar el comando para sobrescribirla.
 
 ## Qué puede consultar cada rol
 
-| Consulta                                           | Administrador | Recepción | Veterinario   |
-| -------------------------------------------------- | ------------- | --------- | ------------- |
-| Resumen, agenda, mascotas y seguimientos           | Sí            | Sí        | Sí            |
-| Listado de clientes y sus correos                  | Sí            | Sí        | No            |
-| Registrar, editar y archivar clientes/mascotas     | Sí            | Sí        | No            |
-| Inventario y precios                               | Sí            | Sí        | No            |
-| Rutas de compras y ventas (en preparación)         | Sí            | Sí        | No            |
-| Ruta de reportes (en preparación)                  | Sí            | No        | No            |
-| Programar/reprogramar citas y registrar asistencia | Sí            | Sí        | No            |
-| Consultar historia y notas de atención             | Sí            | No        | Sí            |
-| Escribir/cerrar una atención                       | No            | No        | Solo asignado |
-| Cuentas/roles del equipo                           | Sí            | No        | No            |
+| Consulta                                           | Administrador  | Recepción      | Veterinario            |
+| -------------------------------------------------- | -------------- | -------------- | ---------------------- |
+| Resumen, agenda y mascotas                         | Sí             | Sí             | Sí                     |
+| Seguimientos                                       | Todo el equipo | Todo el equipo | Solo asignados propios |
+| Registro e historial de contactos                  | Sí             | Sí             | No                     |
+| Listado de clientes y sus correos                  | Sí             | Sí             | No                     |
+| Registrar, editar y archivar clientes/mascotas     | Sí             | Sí             | No                     |
+| Inventario y precios                               | Sí             | Sí             | No                     |
+| Rutas de compras y ventas (en preparación)         | Sí             | Sí             | No                     |
+| Ruta de reportes (en preparación)                  | Sí             | No             | No                     |
+| Programar/reprogramar citas y registrar asistencia | Sí             | Sí             | No                     |
+| Consultar historia y notas de atención             | Sí             | No             | Sí                     |
+| Escribir/cerrar una atención                       | No             | No             | Solo asignado          |
+| Cuentas/roles del equipo                           | Sí             | No             | No                     |
 
 Los veterinarios ven nombres de responsables vinculados a pacientes, pero no
 el listado de contactos ni los datos comerciales. El resumen de su API omite
@@ -48,7 +50,7 @@ las filas de clientes y productos, y oculta el agregado de productos (`null`).
 En esta etapa, los tres roles autorizados pueden consultar los pacientes y citas
 de la misma sede; no se restringen a un profesional asignado. No hay separación
 entre clínicas. Las rutas todavía no implementadas no publican datos de reportes,
-compras o ventas. El [bloque 5](AGENDA-Y-ATENCION.md) aplica permisos de agenda y de atención por operación.
+compras o ventas. El [bloque 5](AGENDA-Y-ATENCION.md) aplica permisos de agenda y de atención por operación. El [bloque 6](SEGUIMIENTOS-Y-CONTACTOS.md) limita las tareas del veterinario a las asignadas a su cuenta y reserva los contactos a administración y recepción.
 
 El servidor consulta rol, actividad y habilitación de acceso en cada petición.
 Cambiar/desactivar una cuenta en la base afecta sus peticiones siguientes.

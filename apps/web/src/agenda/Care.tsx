@@ -12,6 +12,8 @@ const date = (value: string) =>
   }).format(new Date(value));
 import { useAuth } from '../auth';
 import { ApiError, useApi } from '../api';
+import { FollowupForm } from '../follow-ups/Forms';
+import type { FollowupTarget, PetRecord } from '@nexovet/shared';
 const values = (record: EncounterRecord): EncounterInput => ({
   weightKg: record.weightKg,
   temperatureC: record.temperatureC,
@@ -36,6 +38,7 @@ export function CareDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [notice, setNotice] = useState('');
+  const [followupTarget, setFollowupTarget] = useState<FollowupTarget | null>(null);
   const editable =
     auth.session!.user.role === 'veterinarian' &&
     auth.session!.user.id === record.veterinarianId &&
@@ -97,6 +100,34 @@ export function CareDialog({
       setBusy(false);
     }
   }
+  async function newFollowup() {
+    setBusy(true);
+    try {
+      const pet = await api<PetRecord>(`/api/pets/${record.petId}`);
+      setFollowupTarget({
+        clientId: pet.clientId,
+        clientName: pet.ownerName,
+        petId: pet.id,
+        petName: pet.name,
+      });
+    } catch (error) {
+      setError(error as ApiError);
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (followupTarget)
+    return (
+      <FollowupForm
+        target={followupTarget}
+        onClose={() => setFollowupTarget(null)}
+        onSaved={() => {
+          setFollowupTarget(null);
+          setNotice('Seguimiento programado correctamente.');
+          onChanged();
+        }}
+      />
+    );
   return (
     <Dialog title={`Atención de ${record.petName}`} onClose={onClose} busy={busy}>
       <form onSubmit={(event) => void save(event)}>
@@ -258,6 +289,16 @@ export function CareDialog({
           )}
         </div>
         <div className="record-dialog-actions care-actions">
+          {record.closedAt && (
+            <button
+              className="button"
+              type="button"
+              disabled={busy}
+              onClick={() => void newFollowup()}
+            >
+              Programar seguimiento
+            </button>
+          )}
           <button type="button" className="secondary-button" disabled={busy} onClick={onClose}>
             Volver
           </button>

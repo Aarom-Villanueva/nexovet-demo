@@ -156,6 +156,99 @@ export interface AgendaPatient {
   ownerName: string;
   species: Species;
 }
+export const followupStatusLabels = {
+  pending: 'Pendiente',
+  completed: 'Completado',
+  cancelled: 'Cancelado',
+} as const;
+export const contactChannelLabels = {
+  phone: 'Llamada',
+  whatsapp: 'WhatsApp',
+  email: 'Correo',
+  in_person: 'Presencial',
+} as const;
+export const contactOutcomeLabels = {
+  contacted: 'Contacto realizado',
+  no_answer: 'Sin respuesta',
+  rescheduled: 'Coordinación reprogramada',
+  declined: 'Cliente declinó',
+  wrong_contact: 'Dato de contacto incorrecto',
+  other: 'Otro resultado',
+} as const;
+export type FollowupStatus = keyof typeof followupStatusLabels;
+export type ContactChannel = keyof typeof contactChannelLabels;
+export type ContactOutcome = keyof typeof contactOutcomeLabels;
+export interface FollowupTarget {
+  clientId: string;
+  clientName: string;
+  petId: string | null;
+  petName: string | null;
+}
+export interface FollowupInput {
+  clientId: string;
+  petId: string | null;
+  assignedTo: string | null;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+}
+export interface FollowupRecord extends FollowupTarget {
+  id: string;
+  assignedTo: string | null;
+  assigneeName: string | null;
+  title: string;
+  description: string;
+  dueAt: string;
+  date: string;
+  time: string;
+  status: FollowupStatus;
+  completedAt: string | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  createdByName: string | null;
+  contactCount: number;
+  overdue: boolean;
+}
+export interface FollowupOptions {
+  team: Array<{ id: string; name: string; role: Role }>;
+  today: string;
+  time: string;
+  canCoordinate: boolean;
+}
+export interface FollowupStats {
+  pending: number;
+  overdue: number;
+  today: number;
+  completed: number;
+}
+export interface ContactInput {
+  requestId: string;
+  clientId: string;
+  taskId: string | null;
+  taskVersion: number | null;
+  channel: ContactChannel;
+  outcome: ContactOutcome;
+  note: string;
+  date: string;
+  time: string;
+  completeTask: boolean;
+}
+export interface ContactRecord {
+  id: string;
+  clientId: string;
+  clientName: string;
+  taskId: string | null;
+  taskTitle: string | null;
+  recordedBy: string;
+  recorderName: string;
+  channel: ContactChannel;
+  outcome: ContactOutcome;
+  note: string;
+  occurredAt: string;
+  createdAt: string;
+}
 export interface DemoOverview {
   demo: boolean;
   businessName: string;
