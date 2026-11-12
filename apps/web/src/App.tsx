@@ -24,6 +24,7 @@ import { AuthProvider, LoginPage, useAuth } from './auth';
 import { useOverview } from './useOverview';
 import { PatientDirectory } from './patients/Directory';
 import { Agenda } from './agenda/Agenda';
+import { SalesBoard } from './sales/Board';
 import { InventoryBoard, PurchaseBoard } from './inventory/Boards';
 import { FollowupBoard } from './follow-ups/Board';
 import { Appointments, date, labels, money, SectionTitle, Status, Table } from './components';
@@ -243,10 +244,11 @@ function DataViews({ data }: { data: DemoOverview }) {
       <Route path="/clientes" element={<PatientDirectory />} />
       <Route path="/inventario" element={<InventoryBoard />} />
       <Route path="/compras" element={<PurchaseBoard />} />
+      <Route path="/ventas" element={<SalesBoard />} />
       <Route path="/seguimiento" element={<FollowupBoard />} />
       <Route path="/administracion" element={<UserAccounts />} />
       {navigation
-        .slice(6)
+        .slice(7)
         .filter((item) => item.to !== '/administracion')
         .map((item) => (
           <Route key={item.to} path={item.to} element={<ComingSoon title={item.label} />} />

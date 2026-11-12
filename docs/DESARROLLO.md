@@ -43,6 +43,8 @@ Resumen, agenda por día/semana, directorio de clientes y mascotas, inventario y
 y contactos manuales con reintentos que evitan duplicados; no envía comunicaciones.
 [El bloque 7](INVENTARIO-Y-COMPRAS.md) permite mantener el catálogo y proveedores,
 registrar ajustes justificados y recibir compras con entradas transaccionales.
+[El bloque 8](VENTAS-Y-COBROS.md) incorpora ventas mixtas y cobros manuales completos,
+confirmados junto con sus salidas de stock y auditoría.
 [El bloque 4](CLIENTES-Y-MASCOTAS.md) permite registrar, editar, buscar y archivar
 fichas. Administrador y recepción escriben; veterinario solo consulta pacientes.
 [El bloque 5](AGENDA-Y-ATENCION.md) conecta las citas con el registro de atención

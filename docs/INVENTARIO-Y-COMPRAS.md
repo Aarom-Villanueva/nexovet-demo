@@ -142,6 +142,6 @@ existan fixtures históricos archivados. No ejecutar pruebas en una base real.
 Fuera de alcance: recepciones parciales, devoluciones documentadas, lotes y caducidad,
 varios almacenes, importación masiva, valorización/contabilidad, pagos al proveedor,
 impuestos y facturación SUNAT. No hay integración ni comunicación con proveedores.
-Las ventas y sus salidas/cobros corresponden al bloque 8; reportes y configuración
+Las ventas y sus salidas/cobros se implementan en el [bloque 8](VENTAS-Y-COBROS.md); reportes y configuración
 al 9, y despliegue, respaldos y operación con datos reales al 10. La API implementa
 las transiciones operativas; SQL directo no constituye un flujo autorizado de compra.

@@ -16,6 +16,7 @@ import {
 import type { SendResetMail, ResetMail } from './mail.js';
 import { registerPatients } from '../patients/routes.js';
 import { registerAgenda } from '../agenda/routes.js';
+import { registerSales } from '../sales/routes.js';
 import { registerInventory } from '../inventory/routes.js';
 import { registerFollowups } from '../follow-ups/routes.js';
 
@@ -350,4 +351,5 @@ export async function registerAuth(app: FastifyInstance, options: AuthOptions) {
   await registerAgenda(app, { pool, requireSession, requireWrite, permit });
   await registerFollowups(app, { pool, requireSession, requireWrite, permit });
   await registerInventory(app, { pool, requireSession, requireWrite, permit });
+  await registerSales(app, { pool, requireSession, requireWrite, permit });
 }

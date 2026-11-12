@@ -1,0 +1,78 @@
+.sale-client {
+  padding: 16px;
+  border: 1px solid #e0e9da;
+  border-radius: 10px;
+  background: #f8faf4;
+  color: #47644a;
+}
+.sale-client > .selected-owner {
+  margin-top: 12px;
+}
+.sale-client > .text-link {
+  margin-top: 10px;
+}
+.sale-line-editor {
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+.sale-line-editor > div:first-child {
+  grid-column: 1/-1;
+}
+.sale-payment-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 18px 0;
+}
+.sale-payment-summary > div {
+  padding: 16px;
+  background: #f5f9f0;
+  border: 1px solid #e2ead9;
+  border-radius: 10px;
+}
+.sale-payment-summary span {
+  display: block;
+  font-size: 11px;
+  color: #7b8d71;
+}
+.sale-payment-summary strong {
+  display: block;
+  font-size: 21px;
+  color: #426447;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+.sale-payment-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 17px;
+  border: 1px solid #dce6d4;
+  border-radius: 10px;
+  background: #fbfcf8;
+}
+.sale-payment-editor > .text-link {
+  justify-self: start;
+}
+.sale-client-filter {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  padding: 17px;
+  margin-bottom: 20px;
+  background: #edf4e7;
+  border-radius: 10px;
+  color: #5f7c51;
+  font-size: 13px;
+}
+@media (max-width: 760px) {
+  .sale-line-editor,
+  .sale-payment-editor,
+  .sale-payment-summary {
+    grid-template-columns: 1fr;
+  }
+  .sale-line-editor > button {
+    justify-self: start;
+  }
+}
