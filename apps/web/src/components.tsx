@@ -1,16 +1,11 @@
 import type { ReactNode } from 'react';
 import { ArrowUpRight, CalendarDays, PawPrint } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { DemoOverview } from '@nexovet/shared';
+import { appointmentLabels, type DemoOverview } from '@nexovet/shared';
 
 export const labels: Record<string, string> = {
-  scheduled: 'Programada',
-  confirmed: 'Confirmada',
-  arrived: 'En recepción',
-  in_progress: 'En atención',
+  ...appointmentLabels,
   completed: 'Completada',
-  cancelled: 'Cancelada',
-  no_show: 'No asistió',
   pending: 'Pendiente',
   dog: 'Perro',
   cat: 'Gato',
@@ -34,8 +29,11 @@ export const time = (value: string) =>
 export const money = (value: string) =>
   new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(Number(value));
 
-export function Status({ value }: { value: string }) {
-  return <span className={`status status-${value}`}>{labels[value] ?? value}</span>;
+export function Status({ value, appointment = false }: { value: string; appointment?: boolean }) {
+  const label = appointment
+    ? appointmentLabels[value as keyof typeof appointmentLabels]
+    : labels[value];
+  return <span className={`status status-${value}`}>{label ?? value}</span>;
 }
 export function Table({ headers, children }: { headers: string[]; children: ReactNode }) {
   return (
@@ -83,7 +81,7 @@ export function Appointments({ items }: { items: DemoOverview['appointments'] })
           <td>{item.service}</td>
           <td>{item.professional}</td>
           <td>
-            <Status value={item.status} />
+            <Status value={item.status} appointment />
           </td>
         </tr>
       ))}

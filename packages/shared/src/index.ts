@@ -84,6 +84,78 @@ export interface PetRecord extends PetInput {
   createdAt: string;
   updatedAt: string;
 }
+export const appointmentLabels = {
+  scheduled: 'Programada',
+  confirmed: 'Confirmada',
+  arrived: 'En espera',
+  in_progress: 'En consulta',
+  completed: 'Atendida',
+  cancelled: 'Cancelada',
+  no_show: 'No asistió',
+} as const;
+export type AppointmentStatus = keyof typeof appointmentLabels;
+export interface AgendaOptions {
+  professionals: Array<{ id: string; name: string }>;
+  services: Array<{ id: string; name: string; durationMinutes: number }>;
+  today: string;
+  timezone: 'America/Lima';
+}
+export interface AppointmentInput {
+  petId: string;
+  professionalId: string;
+  serviceId: string;
+  date: string;
+  startTime: string;
+  durationMinutes: number;
+  reason: string | null;
+}
+export interface AppointmentRecord extends AppointmentInput {
+  id: string;
+  petName: string;
+  species: Species;
+  ownerName: string;
+  professionalName: string;
+  serviceName: string;
+  startsAt: string;
+  endsAt: string;
+  endTime: string;
+  status: AppointmentStatus;
+  version: number;
+  encounterId: string | null;
+  encounterClosedAt: string | null;
+}
+export interface EncounterInput {
+  weightKg: number | null;
+  temperatureC: number | null;
+  findings: string;
+  diagnosis: string;
+  treatment: string;
+}
+export interface EncounterRecord extends EncounterInput {
+  id: string;
+  appointmentId: string;
+  petId: string;
+  petName: string;
+  ownerName: string;
+  veterinarianId: string;
+  veterinarianName: string;
+  serviceName: string;
+  startsAt: string;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+export interface SlotAvailability {
+  available: boolean;
+  conflicts: Array<{ kind: 'professional' | 'pet'; startsAt: string; endsAt: string }>;
+}
+export interface AgendaPatient {
+  id: string;
+  name: string;
+  ownerName: string;
+  species: Species;
+}
 export interface DemoOverview {
   demo: boolean;
   businessName: string;

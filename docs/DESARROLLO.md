@@ -38,9 +38,12 @@ No cargar información real antes de completar y desplegar la aplicación.
 
 ## Qué puedes recorrer
 
-Resumen, agenda del día, directorio de clientes y mascotas, inventario y seguimiento.
+Resumen, agenda por día/semana, directorio de clientes y mascotas, inventario y seguimiento.
 [El bloque 4](CLIENTES-Y-MASCOTAS.md) permite registrar, editar, buscar y archivar
 fichas. Administrador y recepción escriben; veterinario solo consulta pacientes.
+[El bloque 5](AGENDA-Y-ATENCION.md) conecta las citas con el registro de atención
+y la historia del paciente; recepción maneja horarios y llegada, y el veterinario
+asignado registra/cierra la consulta.
 La consulta llega a PostgreSQL a través de la API: no hay una respuesta simulada
 que esconda fallos de conexión. Si la API o la semilla no están disponibles, la
 interfaz muestra el error y permite reintentar.
@@ -88,9 +91,12 @@ nombre distinto de `nexovet_test`; migran y cargan datos ficticios por sí misma
 No necesitan permisos sobre una base real.
 
 `npm run check` ejecuta tipos, pruebas de API, pruebas con PostgreSQL real y la
-compilación de frontend/backend. Las pruebas de navegador comprueban navegación,
+compilación de frontend/backend. Las pruebas de agenda incluyen reservas y ediciones
+concurrentes, transiciones, permisos clínicos, cierre e historia. Las pruebas de
+navegador comprueban navegación,
 login, sesiones, roles, recuperación, altas/edición de fichas, conflictos entre
-ediciones, conservación de borradores, archivo, error/reintento y pantalla móvil.
+ediciones, conservación de borradores, archivo, agenda, atención, historia, error/reintento
+y pantalla móvil.
 `test:e2e` prepara migraciones, semilla y accesos locales antes de ejecutar.
 Las pruebas de autenticación crean usuarios sintéticos; se desactivan al terminar
 y se conservan sus registros de auditoría. Las pruebas de fichas limpian únicamente

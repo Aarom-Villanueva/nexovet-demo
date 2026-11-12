@@ -23,6 +23,7 @@ import { canVisit, roleLabels, type DemoOverview, type AuthUser } from '@nexovet
 import { AuthProvider, LoginPage, useAuth } from './auth';
 import { useOverview } from './useOverview';
 import { PatientDirectory } from './patients/Directory';
+import { Agenda } from './agenda/Agenda';
 import { Appointments, date, labels, money, SectionTitle, Status, Table } from './components';
 
 const navigation = [
@@ -236,18 +237,7 @@ function DataViews({ data }: { data: DemoOverview }) {
   return (
     <Routes>
       <Route path="/" element={<Overview data={data} />} />
-      <Route
-        path="/agenda"
-        element={
-          <section className="panel">
-            <SectionTitle
-              title="Agenda de hoy"
-              subtitle="Vista previa de las citas registradas. La edición estará disponible más adelante."
-            />
-            <Appointments items={data.appointments} />
-          </section>
-        }
-      />
+      <Route path="/agenda" element={<Agenda />} />
       <Route path="/clientes" element={<PatientDirectory />} />
       <Route
         path="/inventario"
@@ -463,9 +453,7 @@ function Workspace() {
         {data?.demo && (
           <div className="preview-banner">
             <Activity size={15} />
-            <span>
-              Demostración con datos ficticios · Clientes y mascotas con registro y edición.
-            </span>
+            <span>Demostración con datos ficticios · Agenda, pacientes y atención por rol.</span>
           </div>
         )}
         <main id="main" tabIndex={-1}>

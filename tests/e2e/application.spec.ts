@@ -10,12 +10,19 @@ const databaseUrl = parseConfig(process.env).DATABASE_URL;
 const database = new URL(databaseUrl).pathname.slice(1);
 const credentials: { accounts: Array<{ email: string; role: string; password: string }> } =
   JSON.parse(await readFile(`${root}/.local/demo-credentials-${database}.json`, 'utf8'));
+let agendaDoctor: { id: string; name: string; email: string };
 test.beforeAll(async () => {
   const { default: pg } = await import('pg');
   const pool = new pg.Pool({ connectionString: databaseUrl });
   try {
     if (!(await pool.query('SELECT 1 FROM business_settings WHERE is_demo')).rowCount)
       throw new Error('E2E requiere una veterinaria ficticia');
+    const doctorEmail = credentials.accounts.find(
+      (account) => account.role === 'veterinarian',
+    )!.email;
+    agendaDoctor = (
+      await pool.query('SELECT id,name,email FROM users WHERE lower(email)=$1', [doctorEmail])
+    ).rows[0];
     // Aísla la repetición de la suite; no modifica límites de cuentas reales.
     const keys = credentials.accounts.map((account) =>
       createHash('sha256').update(`login:email:${account.email}`).digest('hex'),
@@ -206,10 +213,15 @@ test('recuperación escribe en buzón privado local y el formulario cambia la co
 
 const createdClients: string[] = [];
 const createdPets: string[] = [];
+const createdAppointments: string[] = [];
 test.afterAll(async () => {
   const { default: pg } = await import('pg');
   const pool = new pg.Pool({ connectionString: databaseUrl });
   try {
+    await pool.query('DELETE FROM encounters WHERE appointment_id=ANY($1::uuid[])', [
+      createdAppointments,
+    ]);
+    await pool.query('DELETE FROM appointments WHERE id=ANY($1::uuid[])', [createdAppointments]);
     await pool.query('DELETE FROM pets WHERE id=ANY($1::uuid[])', [createdPets]);
     await pool.query('DELETE FROM clients WHERE id=ANY($1::uuid[])', [createdClients]);
   } finally {
@@ -438,4 +450,311 @@ test('formulario móvil permite guardar, archivar y encontrar el registro con fi
     page.getByRole('button', { name: `Ver ficha de ${name}`, exact: true }),
   ).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+async function fixtureAgendaPatient(page: Page) {
+  const owner = await fixtureClient(page, `Responsable agenda ${randomUUID().slice(0, 8)}`);
+  const name = `Paciente agenda ${randomUUID().slice(0, 8)}`;
+  const response = await writeFromBrowser(page, '/api/pets', {
+    name,
+    clientId: owner.id,
+    species: 'dog',
+    breed: null,
+    sex: 'unknown',
+    birthDate: null,
+    microchip: null,
+    allergies: null,
+    active: true,
+  });
+  expect(response.status()).toBe(201);
+  const patient = await response.json();
+  createdPets.push(patient.id);
+  return patient;
+}
+async function bookingInput(
+  page: Page,
+  patientId: string,
+  day = '2040-04-01',
+  startTime = '10:00',
+) {
+  const options = await (await page.request.get('/api/agenda/options')).json();
+  return {
+    petId: patientId,
+    professionalId: agendaDoctor.id,
+    serviceId: options.services[0].id,
+    date: day,
+    startTime,
+    durationMinutes: 30,
+    reason: 'Visita de prueba con datos ficticios',
+  };
+}
+async function fixtureAppointment(page: Page, patientId: string, day: string, startTime: string) {
+  const input = await bookingInput(page, patientId, day, startTime);
+  const response = await writeFromBrowser(page, '/api/appointments', input);
+  expect(response.status()).toBe(201);
+  const record = await response.json();
+  createdAppointments.push(record.id);
+  return record;
+}
+async function fillBooking(page: Page, patient: { name: string }, day: string, startTime: string) {
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Buscar paciente *', { exact: true }).fill(patient.name);
+  await dialog
+    .getByRole('button', { name: `Seleccionar paciente ${patient.name}`, exact: true })
+    .click();
+  await dialog.getByLabel('Veterinario *', { exact: true }).selectOption(agendaDoctor.id);
+  const options = await (await page.request.get('/api/agenda/options')).json();
+  await dialog.getByLabel('Servicio *', { exact: true }).selectOption(options.services[0].id);
+  await dialog.getByLabel('Fecha *', { exact: true }).fill(day);
+  await dialog.getByLabel('Hora de inicio *', { exact: true }).fill(startTime);
+  await dialog.getByLabel('Duración en minutos *', { exact: true }).fill('30');
+}
+async function saveBooking(page: Page) {
+  const pending = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/appointments') && response.request().method() === 'POST',
+  );
+  await page.getByRole('dialog').getByRole('button', { name: 'Guardar cita', exact: true }).click();
+  const response = await pending;
+  expect(response.status()).toBe(201);
+  const record = await response.json();
+  createdAppointments.push(record.id);
+  return record;
+}
+async function logoutUI(page: Page) {
+  await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Qué bueno verte de nuevo.' })).toBeVisible();
+}
+function nearSlot(minutes = 10) {
+  const instant = new Date(Date.now() + minutes * 60000);
+  return {
+    day: new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(instant),
+    time: new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'America/Lima',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).format(instant),
+  };
+}
+async function readyCare(page: Page) {
+  await login(page, 'reception');
+  const patient = await fixtureAgendaPatient(page);
+  const slot = nearSlot();
+  let record = await fixtureAppointment(page, patient.id, slot.day, slot.time);
+  const arrived = await writeFromBrowser(page, `/api/appointments/${record.id}/status`, {
+    version: record.version,
+    status: 'arrived',
+  });
+  expect(arrived.status()).toBe(200);
+  record = await arrived.json();
+  await logoutUI(page);
+  await login(page, 'veterinarian');
+  await page.goto(`/agenda?date=${slot.day}&q=${encodeURIComponent(patient.name)}`);
+  await page.getByRole('button', { name: `Abrir cita de ${patient.name}`, exact: true }).click();
+  const pending = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/appointments/${record.id}/start`) &&
+      response.request().method() === 'POST',
+  );
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Iniciar atención', exact: true })
+    .click();
+  const response = await pending;
+  expect(response.status()).toBe(201);
+  return { patient, record, encounter: await response.json() };
+}
+test('agenda: recepción programa, confirma, reprograma y cancela una cita', async ({ page }) => {
+  await login(page, 'reception');
+  const patient = await fixtureAgendaPatient(page);
+  await page.getByRole('link', { name: 'Agenda', exact: true }).click();
+  await page.getByRole('button', { name: 'Nueva cita', exact: true }).click();
+  await fillBooking(page, patient, '2040-04-01', '10:00');
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Comprobar horario', exact: true }).click();
+  await expect(dialog.getByRole('status')).toContainText('Sin cruces');
+  const record = await saveBooking(page);
+  await expect(
+    page.getByRole('dialog', { name: `Cita de ${patient.name}`, exact: true }),
+  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'Confirmar cita', exact: true }).click();
+  await expect(dialog.getByText('Confirmada', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Reprogramar cita', exact: true }).click();
+  await dialog.getByLabel('Hora de inicio *', { exact: true }).fill('11:00');
+  await dialog.getByRole('button', { name: 'Guardar horario', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: `Cita de ${patient.name}`, exact: true }),
+  ).toBeVisible();
+  await expect(dialog.getByText('Programada', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancelar cita', exact: true }).click();
+  await expect(dialog.getByText('Cancelada', { exact: true })).toBeVisible();
+  const stored = await (await page.request.get(`/api/appointments/${record.id}`)).json();
+  expect(stored.startTime).toBe('11:00');
+  expect(stored.status).toBe('cancelled');
+});
+test('agenda: un horario ocupado avisa sin perder el formulario y permite elegir otro', async ({
+  page,
+}) => {
+  await login(page);
+  const first = await fixtureAgendaPatient(page);
+  await fixtureAppointment(page, first.id, '2040-04-02', '10:00');
+  const second = await fixtureAgendaPatient(page);
+  await page.goto('/agenda');
+  await page.getByRole('button', { name: 'Nueva cita', exact: true }).click();
+  await fillBooking(page, second, '2040-04-02', '10:00');
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Comprobar horario', exact: true }).click();
+  await expect(dialog.getByRole('status')).toContainText('Hay otra cita');
+  await dialog.getByRole('button', { name: 'Guardar cita', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Ese horario se cruza');
+  await expect(dialog.getByLabel('Hora de inicio *', { exact: true })).toHaveValue('10:00');
+  await dialog.getByLabel('Hora de inicio *', { exact: true }).fill('10:30');
+  await saveBooking(page);
+  await expect(
+    page.getByRole('dialog', { name: `Cita de ${second.name}`, exact: true }),
+  ).toBeVisible();
+});
+test('atención: recepción registra llegada; veterinario guarda y cierra; historia conserva la consulta', async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await login(page, 'reception');
+  const patient = await fixtureAgendaPatient(page);
+  const slot = nearSlot();
+  const record = await fixtureAppointment(page, patient.id, slot.day, slot.time);
+  await page.goto(`/agenda?date=${slot.day}&q=${encodeURIComponent(patient.name)}`);
+  await page.getByRole('button', { name: `Abrir cita de ${patient.name}`, exact: true }).click();
+  let dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Registrar llegada', exact: true }).click();
+  await expect(dialog.getByText('En espera', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await logoutUI(page);
+  await login(page, 'veterinarian');
+  await page.goto(`/agenda?date=${slot.day}&q=${encodeURIComponent(patient.name)}`);
+  await expect(page.getByRole('button', { name: 'Nueva cita', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: `Abrir cita de ${patient.name}`, exact: true }).click();
+  await dialog.getByRole('button', { name: 'Iniciar atención', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: `Atención de ${patient.name}`, exact: true }),
+  ).toBeVisible();
+  await dialog.getByLabel('Peso (kg)', { exact: true }).fill('8.125');
+  await dialog.getByLabel('Temperatura (°C)', { exact: true }).fill('38.2');
+  await dialog
+    .getByLabel('Hallazgos de la consulta', { exact: true })
+    .fill('Hallazgos ficticios para probar el sistema.');
+  await dialog
+    .getByLabel('Evaluación / diagnóstico', { exact: true })
+    .fill('Evaluación de demostración, sin consejo clínico.');
+  await dialog
+    .getByLabel('Plan e indicaciones', { exact: true })
+    .fill('Texto de prueba, no usar como indicación médica.');
+  await expect(dialog.getByRole('button', { name: 'Cerrar atención', exact: true })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Guardar atención', exact: true }).click();
+  await expect(dialog.getByRole('status')).toContainText('Cambios de la atención guardados');
+  await dialog.getByRole('button', { name: 'Cerrar atención', exact: true }).click();
+  await expect(dialog.getByText('Atención cerrada', { exact: true })).toBeVisible();
+  await expect(dialog.getByLabel('Evaluación / diagnóstico', { exact: true })).toHaveCount(0);
+  const persisted = await (await page.request.get(`/api/appointments/${record.id}`)).json();
+  expect(persisted.status).toBe('completed');
+  await page.reload();
+  await page.goto(`/clientes?tab=pets&q=${encodeURIComponent(patient.name)}`);
+  await page.getByRole('button', { name: `Ver ficha de ${patient.name}`, exact: true }).click();
+  await dialog.getByRole('button', { name: 'Historia clínica', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: `Historia de ${patient.name}`, exact: true }),
+  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'Ver atención', exact: true }).click();
+  await expect(
+    dialog.getByText('Evaluación de demostración, sin consejo clínico.', { exact: true }),
+  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'Volver', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await logoutUI(page);
+  await login(page, 'reception');
+  expect((await page.request.get(`/api/encounters/${persisted.encounterId}`)).status()).toBe(403);
+  expect((await page.request.get(`/api/pets/${patient.id}/history`)).status()).toBe(403);
+});
+test('atención: una edición simultánea conserva el borrador y permite recuperar la versión actual', async ({
+  page,
+}) => {
+  const care = await readyCare(page);
+  const dialog = page.getByRole('dialog');
+  await dialog
+    .getByLabel('Hallazgos de la consulta', { exact: true })
+    .fill('Borrador local por conservar');
+  const other = await writeFromBrowser(
+    page,
+    `/api/encounters/${care.encounter.id}`,
+    {
+      version: 1,
+      weightKg: null,
+      temperatureC: null,
+      findings: 'Guardado desde otra pestaña',
+      diagnosis: 'Registro ficticio',
+      treatment: 'Plan ficticio',
+    },
+    'PUT',
+  );
+  expect(other.status()).toBe(200);
+  await dialog.getByRole('button', { name: 'Guardar atención', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Otra persona actualizó este registro');
+  await expect(dialog.getByLabel('Hallazgos de la consulta', { exact: true })).toHaveValue(
+    'Borrador local por conservar',
+  );
+  await dialog.getByRole('button', { name: 'Recargar ficha actual', exact: true }).click();
+  await expect(dialog.getByLabel('Hallazgos de la consulta', { exact: true })).toHaveValue(
+    'Guardado desde otra pestaña',
+  );
+  await dialog.getByRole('button', { name: 'Cerrar atención', exact: true }).click();
+  await expect(dialog.getByText('Atención cerrada', { exact: true })).toBeVisible();
+});
+test('agenda móvil: programa una cita, cambia a semana y filtra por profesional', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page, 'reception');
+  const patient = await fixtureAgendaPatient(page);
+  await page.goto('/agenda');
+  await page.getByRole('button', { name: 'Nueva cita', exact: true }).click();
+  await fillBooking(page, patient, '2040-04-05', '11:00');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await saveBooking(page);
+  await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await page.getByRole('button', { name: 'Semana', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Agenda de la semana', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: `Abrir cita de ${patient.name}`, exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole('combobox', { name: 'Veterinario de agenda', exact: true })
+    .selectOption(agendaDoctor.id);
+  await expect(
+    page.getByRole('button', { name: `Abrir cita de ${patient.name}`, exact: true }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+test('agenda: muestra fallo de lectura y permite reintentar sin inventar citas', async ({
+  page,
+}) => {
+  await login(page);
+  await page.route('**/api/appointments?*', (route) =>
+    route.fulfill({ status: 503, json: { message: 'Agenda temporalmente no disponible' } }),
+  );
+  await page.goto('/agenda');
+  await expect(page.getByRole('alert')).toContainText('Agenda temporalmente no disponible');
+  await expect(page.getByRole('button', { name: 'Abrir cita', exact: true })).toHaveCount(0);
+  await page.unroute('**/api/appointments?*');
+  await page.getByRole('button', { name: 'Intentar nuevamente', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Visitas programadas', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
 });

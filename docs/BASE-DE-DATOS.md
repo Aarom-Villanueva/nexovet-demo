@@ -99,3 +99,16 @@ la ficha. Las claves únicas de documento y microchip existentes resuelven
 duplicados, incluso concurrentes. Los estados activos permiten archivo reversible
 sin eliminar relaciones ni historial. No se transfieren mascotas entre responsables.
 Detalles, contrato y validaciones en [CLIENTES-Y-MASCOTAS.md](CLIENTES-Y-MASCOTAS.md).
+
+## Ampliación del bloque 5
+
+`004_agenda_care.sql` añade versión/fecha de actualización a citas y atenciones.
+Una atención debe coincidir con el profesional de su cita en consulta; un trigger
+lo comprueba al crear/cambiar la asignación. La cita con atención conserva paciente,
+profesional, servicio y horario. Las notas de una atención cerrada rechazan UPDATE
+en PostgreSQL. La API no ofrece borrado ni reapertura clínica.
+
+Los cambios de estado, el alta/cierre de la atención y su auditoría se realizan
+transaccionalmente. Las restricciones de exclusión de la migración 001 siguen
+siendo la autoridad final frente a cruces concurrentes. Ver reglas, permisos y
+límites en [AGENDA-Y-ATENCION.md](AGENDA-Y-ATENCION.md).

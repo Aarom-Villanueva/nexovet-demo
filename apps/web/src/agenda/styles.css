@@ -1,0 +1,194 @@
+.agenda-page .button,
+.record-dialog .button {
+  margin-top: 0;
+}
+.agenda-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px 0;
+}
+.agenda-date-controls {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+.agenda-date-controls > label {
+  display: grid;
+  gap: 6px;
+  font-size: 10px;
+  color: #6e8374;
+}
+.agenda-date-controls input {
+  font: inherit;
+  font-size: 13px;
+  background: #fff;
+  color: #3c604a;
+  border: 1px solid #dce5dd;
+  border-radius: 8px;
+  padding: 9px;
+}
+.agenda-date-controls > button {
+  height: 36px;
+  padding: 8px;
+}
+.agenda-view {
+  display: flex;
+  background: #f0f5ef;
+  border-radius: 8px;
+  padding: 4px;
+}
+.agenda-view button {
+  background: transparent;
+  border-radius: 6px;
+  padding: 8px 16px;
+  color: #85917a;
+  font-size: 12px;
+}
+.agenda-view button.selected {
+  background: #fff;
+  color: #2f6244;
+  box-shadow: 0 1px 4px #2f452117;
+}
+.agenda-page table {
+  min-width: 800px;
+}
+.agenda-page .directory-search {
+  gap: 10px;
+}
+.appointment-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.record-dialog .appointment-actions .button {
+  margin-top: 0;
+}
+.care-summary {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: #39785b;
+  padding: 16px;
+  border: 1px solid #e3ecde;
+  border-radius: 12px;
+  background: #f6faf3;
+  margin-bottom: 22px;
+}
+.care-summary strong {
+  font-size: 13px;
+}
+.care-summary p {
+  font-size: 11px;
+  color: #819079;
+  line-height: 1.6;
+  margin-top: 6px;
+}
+.care-summary > .status {
+  margin-left: auto;
+}
+.care-help {
+  margin-top: 18px;
+}
+.care-actions {
+  flex-wrap: wrap;
+}
+.care-note-block {
+  margin-top: 16px;
+}
+.care-history {
+  list-style: none;
+  padding: 0;
+  margin: 22px 0 0;
+}
+.care-history li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 0;
+  border-top: 1px solid #e6ede2;
+}
+.care-history strong {
+  font-size: 12px;
+}
+.care-history p {
+  font-size: 11px;
+  color: #809077;
+  margin: 7px 0;
+  line-height: 1.6;
+}
+.care-history small {
+  font-size: 10px;
+  color: #92a084;
+}
+.care-history li > button {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: transparent;
+}
+.slot-check {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: start;
+}
+.slot-check p {
+  font-size: 12px;
+  line-height: 1.7;
+}
+.slot-free {
+  color: #45864e;
+  background: #f0f7e8;
+  padding: 12px;
+  border-radius: 8px;
+}
+.status-in_progress {
+  background: #f2eefa;
+  color: #79649b;
+}
+.status-arrived {
+  background: #eaf0fa;
+  color: #5c79a3;
+}
+@media (max-width: 760px) {
+  .agenda-toolbar {
+    align-items: start;
+    flex-direction: column;
+    gap: 16px;
+    padding-inline: 18px;
+  }
+  .agenda-date-controls {
+    width: 100%;
+    gap: 8px;
+  }
+  .agenda-date-controls > label {
+    flex: 1;
+    min-width: 0;
+  }
+  .agenda-date-controls input {
+    width: 100%;
+    min-width: 0;
+  }
+  .agenda-page .directory-heading > .button {
+    width: 100%;
+    justify-content: center;
+  }
+  .agenda-page .directory-status {
+    min-width: 120px;
+  }
+  .care-history li {
+    flex-wrap: wrap;
+  }
+  .care-history .record-avatar {
+    display: none;
+  }
+  .care-actions > button {
+    flex: 1;
+    justify-content: center;
+  }
+  .care-summary > .status {
+    margin-left: 0;
+  }
+}
