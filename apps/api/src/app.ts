@@ -6,6 +6,7 @@ interface Options {
   production?: boolean;
   enableDemo?: boolean;
   logger?: boolean;
+  trustedProxyHops?: 0 | 1;
   ready: () => Promise<void>;
   overview: (role: Role, userId?: string) => Promise<DemoOverview | null>;
   auth?: Omit<AuthOptions, 'overview'>;
@@ -14,6 +15,7 @@ export function buildApp(options: Options) {
   if (options.production && options.enableDemo)
     throw new Error('Vista previa prohibida en producción');
   const app = Fastify({
+    trustProxy: options.trustedProxyHops === 1 ? (_address, hop) => hop < 1 : false,
     logger: options.logger
       ? {
           redact: ['req.headers.cookie', 'req.headers.authorization', 'res.headers["set-cookie"]'],

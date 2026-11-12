@@ -23,7 +23,9 @@
     "format:check": "prettier --check apps packages tests docs *.json *.ts compose.yaml .github/workflows/application.yml",
     "auth:demo-users": "npm run auth:demo-users -w @nexovet/api",
     "auth:create-user": "npm run auth:create-user -w @nexovet/api",
-    "pretest:e2e": "npm run db:migrate && npm run db:seed && npm run auth:demo-users"
+    "pretest:e2e": "npm run db:migrate && npm run db:seed && npm run auth:demo-users",
+    "db:initialize": "npm run db:initialize -w @nexovet/api",
+    "test:operations": "node tests/operations/deployment.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

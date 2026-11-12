@@ -1,0 +1,22 @@
+# Lista de inclusión: ni secretos ni respaldos forman parte del contexto.
+*
+!package.json
+!package-lock.json
+!tsconfig.base.json
+!apps/
+!apps/**
+!packages/
+!packages/**
+!assets/
+!assets/nexovet-pets.webp
+!database/
+!database/migrations/
+!database/migrations/*.sql
+!deploy/
+!deploy/Dockerfile
+!deploy/Caddyfile
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+apps/api/test

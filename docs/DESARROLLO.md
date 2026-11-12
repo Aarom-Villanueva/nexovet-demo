@@ -21,7 +21,7 @@ En PowerShell, `Copy-Item .env.example .env` equivale al comando `cp`.
 
 - Aplicación: http://localhost:5173
 - Salud de API: http://localhost:3001/api/health
-- Disponibilidad de base/migraciones: http://localhost:3001/api/ready
+- Disponibilidad de base/migraciones/negocio: http://localhost:3001/api/ready
 - Login: http://localhost:5173/ingresar
 - Resumen protegido: `/api/overview` (requiere cookie de sesión)
 - Accesos de desarrollo: archivo privado `.local/demo-credentials-nexovet_dev.json`
@@ -56,11 +56,10 @@ La consulta llega a PostgreSQL a través de la API: no hay una respuesta simulad
 que esconda fallos de conexión. Si la API o la semilla no están disponibles, la
 interfaz muestra el error y permite reintentar.
 
-Compras, ventas y reportes siguen «en preparación». Administración muestra
-las cuentas/roles, sin editar; solo la ve el administrador. El veterinario ve
-pacientes y agenda, sin correos de clientes, inventario ni precios. Las consultas
-de clientes y mascotas están paginadas. Los demás módulos aún presentan muestras
-limitadas y se completan por bloque.
+Compras, ventas, reportes y administración ya cuentan con flujos conectados a la
+base. El veterinario consulta pacientes, agenda, historia clínica y seguimientos
+propios; no accede a clientes/contactos, inventario, precios ni reportes comerciales.
+Los listados operativos tienen búsqueda y paginación según sus contratos.
 La demo estática antigua sigue abriendo desde GitHub Pages y sus accesos por rol
 son simulados: no son las cuentas de esta nueva aplicación.
 
@@ -127,7 +126,8 @@ npm run build
 El backend compilado se ejecuta con `npm start -w @nexovet/api`. La salida web
 queda en `apps/web/dist`. Una publicación de la nueva aplicación necesitará
 hosting para Node y PostgreSQL, configuración SPA y proxy `/api`; GitHub Pages
-solo aloja la demo estática. El despliegue operativo corresponde al bloque 10.
+solo aloja la demo estática. El [bloque 10](DESPLIEGUE-Y-RESPALDOS.md) proporciona imágenes, Compose HTTPS,
+inicialización vacía, respaldo y recuperación probada en una instalación aislada.
 
 ## Estructura
 

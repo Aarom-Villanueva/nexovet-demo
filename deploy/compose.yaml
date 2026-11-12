@@ -1,0 +1,68 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_OWNER_PASSWORD:?Define DB_OWNER_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-nexovet}
+      APP_DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD}
+    volumes:
+      - database:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/10-nexovet.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d "$$POSTGRES_DB"']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    logging: &logging
+      driver: json-file
+      options: { max-size: 10m, max-file: '3' }
+  api:
+    image: ${API_IMAGE:-nexovet-api:local}
+    build: { context: .., dockerfile: deploy/Dockerfile, target: api }
+    restart: unless-stopped
+    init: true
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      ENABLE_DEMO: 'false'
+      TRUST_PROXY_HOPS: '1'
+      NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1},api,db
+      no_proxy: ${NO_PROXY:-localhost,127.0.0.1},api,db
+      DATABASE_URL: postgresql://nexovet:${DB_PASSWORD:?Define DB_PASSWORD}@db:5432/${DB_NAME:-nexovet}
+      APP_ORIGIN: ${APP_ORIGIN:?Define APP_ORIGIN HTTPS}
+      MAIL_DELIVERY: smtp
+      SMTP_HOST: ${SMTP_HOST:?Define SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:?Define MAIL_FROM}
+    read_only: true
+    tmpfs: ['/tmp:size=16m,mode=1777']
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging: *logging
+  web:
+    image: ${WEB_IMAGE:-nexovet-web:local}
+    build: { context: .., dockerfile: deploy/Dockerfile, target: web }
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?Define SITE_ADDRESS}
+      NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1},api,db
+      no_proxy: ${NO_PROXY:-localhost,127.0.0.1},api,db
+    ports:
+      - '${PUBLISH_HOST:-0.0.0.0}:${HTTP_PORT:-80}:80'
+      - '${PUBLISH_HOST:-0.0.0.0}:${HTTPS_PORT:-443}:443'
+    volumes:
+      - certificates:/data
+      - caddy_config:/config
+    logging: *logging
+volumes:
+  database:
+  certificates:
+  caddy_config:

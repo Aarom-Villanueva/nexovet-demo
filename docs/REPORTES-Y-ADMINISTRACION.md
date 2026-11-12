@@ -168,5 +168,5 @@ Solo se usan bases y negocios sintéticos; no ejecutar pruebas sobre datos reale
 
 Quedan fuera presupuestos, predicción de ingresos, rentabilidad, contabilidad,
 conciliación bancaria, cierres de caja, SUNAT, gestión de varios negocios, adjuntos
-y permisos personalizados. Respaldo/restauración, despliegue y comprobaciones de
-operación completa pertenecen al bloque 10.
+y permisos personalizados. El [bloque 10](DESPLIEGUE-Y-RESPALDOS.md) añade respaldo/restauración,
+contenedores y comprobaciones de operación completa.

@@ -143,5 +143,6 @@ concurrencia, revocación, CSRF, roles y caducidad. `npm run test:e2e` prepara a
 locales y prueba el navegador de escritorio/móvil, recuperación por buzón local,
 persistencia al recargar, logout y denegación de acceso directo. Las pruebas de
 recuperación crean una cuenta sintética independiente y la desactivan al terminar.
-El deploy de la aplicación con HTTPS, Node y PostgreSQL corresponde al bloque 10;
+El [bloque 10](DESPLIEGUE-Y-RESPALDOS.md) prepara HTTPS, Node y PostgreSQL,
+inicialización y recuperación con invalidación de sesiones anteriores;
 la demo de GitHub Pages continúa siendo estática.
