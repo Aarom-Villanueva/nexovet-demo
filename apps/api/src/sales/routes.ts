@@ -199,6 +199,10 @@ export async function registerSales(
         if (!old.lines.length) throw new Problem(409, 'Agrega al menos un producto o servicio.');
         const clientName = await activeClient(c, old.clientId);
         await activeItems(c, old.lines);
+        await c.query(
+          'UPDATE sale_lines l SET sku_snapshot=p.sku FROM products p WHERE l.sale_id=$1 AND l.product_id=p.id AND l.sku_snapshot IS NULL',
+          [old.id],
+        );
         const total = v.scaled(old.total, 2),
           paid = b.payments.reduce((sum, p) => sum + v.scaled(p.amount, 2), 0n);
         if (total !== paid)

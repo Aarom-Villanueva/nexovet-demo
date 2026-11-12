@@ -22,6 +22,7 @@ se actualizan los precios de todas las líneas según el catálogo vigente; el
 formulario avisa y muestra el total guardado antes de confirmar. La confirmación
 conserva esos precios y conceptos, aunque el catálogo cambie después del guardado.
 Se revalidan actividad y saldo, sin cambiar silenciosamente el precio acordado.
+Los borradores de demostración anteriores también conservan el SKU al confirmarse.
 Los SKU/descripciones se conservan en las líneas; al confirmar también se conserva
 el nombre del cliente asociado. Las identidades siguen referenciadas por UUID.
 

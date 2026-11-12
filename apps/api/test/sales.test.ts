@@ -526,3 +526,28 @@ test('fallo de auditoría al crear no deja borrador ni consume la solicitud idem
   assert.equal(r.statusCode, 201, r.body);
   sales.push(r.json().id);
 });
+
+test('borrador anterior al bloque conserva el SKU del producto al confirmar', async () => {
+  const p = await product(),
+    id = randomUUID();
+  const sku = (await pool.query('SELECT sku FROM products WHERE id=$1', [p])).rows[0].sku;
+  await pool.query('INSERT INTO sales(id,number,created_by) VALUES ($1,$2,$3)', [
+    id,
+    `LEGACY-${randomUUID()}`,
+    rec.id,
+  ]);
+  sales.push(id);
+  await pool.query(
+    "INSERT INTO sale_lines(sale_id,product_id,description,quantity,unit_price) VALUES ($1,$2,'Producto previo a migración',1,0.10)",
+    [id, p],
+  );
+  const s = (await call('GET', `/api/sales/${id}`)).json<SaleDetail>();
+  assert.equal(s.lines[0]!.kind, 'product');
+  assert.equal(s.lines[0]!.sku, sku);
+  assert.equal((await confirm(s)).statusCode, 200);
+  await pool.query('UPDATE products SET sku=$2 WHERE id=$1', [
+    p,
+    `RENAMED-${randomUUID().slice(0, 8)}`,
+  ]);
+  assert.equal((await call('GET', `/api/sales/${id}`)).json().lines[0].sku, sku);
+});

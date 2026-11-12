@@ -45,7 +45,7 @@ export async function sale(c: PoolClient, id: string, lock = false): Promise<Sal
   if (!r) throw new Problem(404, 'No encontramos esa venta.');
   const lines = (
     await c.query<SaleDetail['lines'][number]>(
-      `SELECT l.id,CASE WHEN l.product_id IS NOT NULL THEN 'product' ELSE 'service' END AS kind,coalesce(l.product_id,l.service_id) AS "itemId",l.description,l.sku_snapshot AS sku,l.quantity::text,l.unit_price::text AS "unitPrice",l.line_total::text AS "lineTotal",coalesce(p.active,v.active) AS active FROM sale_lines l LEFT JOIN products p ON p.id=l.product_id LEFT JOIN services v ON v.id=l.service_id WHERE l.sale_id=$1 ORDER BY l.id`,
+      `SELECT l.id,CASE WHEN l.product_id IS NOT NULL THEN 'product' ELSE 'service' END AS kind,coalesce(l.product_id,l.service_id) AS "itemId",l.description,coalesce(l.sku_snapshot,p.sku) AS sku,l.quantity::text,l.unit_price::text AS "unitPrice",l.line_total::text AS "lineTotal",coalesce(p.active,v.active) AS active FROM sale_lines l LEFT JOIN products p ON p.id=l.product_id LEFT JOIN services v ON v.id=l.service_id WHERE l.sale_id=$1 ORDER BY l.id`,
       [id],
     )
   ).rows;
