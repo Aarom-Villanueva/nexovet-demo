@@ -235,10 +235,37 @@ test('recuperación escribe en buzón privado local y el formulario cambia la co
 const createdClients: string[] = [];
 const createdPets: string[] = [];
 const createdAppointments: string[] = [];
+const createdProducts: string[] = [];
+const createdSuppliers: string[] = [];
+const createdPurchases: string[] = [];
 test.afterAll(async () => {
   const { default: pg } = await import('pg');
   const pool = new pg.Pool({ connectionString: databaseUrl });
   try {
+    // El libro de stock y las compras finalizadas no se borran. Los fixtures se
+    // compensan y archivan; conservan trazabilidad sin alterar productos de la semilla.
+    const actor = (await pool.query("SELECT id FROM users WHERE email='admin@example.invalid'"))
+      .rows[0].id;
+    for (const id of createdProducts) {
+      const stock = (
+        await pool.query('SELECT quantity FROM product_stock WHERE product_id=$1', [id])
+      ).rows[0]?.quantity;
+      if (stock && Number(stock) !== 0)
+        await pool.query(
+          "INSERT INTO stock_movements(product_id,quantity,kind,reason,recorded_by) VALUES ($1,-$2::numeric,'adjustment','Compensación de fixture E2E',$3)",
+          [id, stock, actor],
+        );
+    }
+    await pool.query('UPDATE products SET active=false WHERE id=ANY($1::uuid[])', [
+      createdProducts,
+    ]);
+    await pool.query('UPDATE suppliers SET active=false WHERE id=ANY($1::uuid[])', [
+      createdSuppliers,
+    ]);
+    await pool.query(
+      "UPDATE purchase_orders SET status='cancelled',version=version+1 WHERE id=ANY($1::uuid[]) AND status='draft'",
+      [createdPurchases],
+    );
     await pool.query('DELETE FROM contact_events WHERE client_id=ANY($1::uuid[])', [
       createdClients,
     ]);
@@ -1056,4 +1083,309 @@ test('seguimientos: un fallo de lectura se puede reintentar sin mostrar tareas i
   await page.getByRole('button', { name: 'Intentar nuevamente', exact: true }).click();
   await expect(page.getByRole('columnheader', { name: 'Seguimiento', exact: true })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+async function inventoryFixtures(page: Page) {
+  const productResponse = await writeFromBrowser(page, '/api/products', {
+    sku: `E2E-${randomUUID().slice(0, 8)}`,
+    name: `Alimento E2E ${randomUUID().slice(0, 8)}`,
+    categoryId: null,
+    salePrice: '15.50',
+    minimumStock: '2',
+    active: true,
+  });
+  expect(productResponse.status()).toBe(201);
+  const product = await productResponse.json();
+  createdProducts.push(product.id);
+  const supplierResponse = await writeFromBrowser(page, '/api/suppliers', {
+    name: `Distribuidor E2E ${randomUUID().slice(0, 8)}`,
+    taxId: null,
+    email: 'proveedor-e2e@example.invalid',
+    phone: '000000000',
+    address: 'Dirección ficticia',
+    active: true,
+  });
+  expect(supplierResponse.status()).toBe(201);
+  const supplier = await supplierResponse.json();
+  createdSuppliers.push(supplier.id);
+  return { product, supplier };
+}
+async function purchaseFixture(page: Page, product: { id: string }, supplier: { id: string }) {
+  const body = {
+    requestId: randomUUID(),
+    supplierId: supplier.id,
+    note: 'Documento ficticio E2E',
+    lines: [{ productId: product.id, quantity: '3.125', unitCost: '0.10' }],
+  };
+  const response = await writeFromBrowser(page, '/api/purchases', body);
+  expect(response.status()).toBe(201);
+  const record = await response.json();
+  createdPurchases.push(record.id);
+  return record;
+}
+async function openPurchase(page: Page, record: { number: string }) {
+  await page.goto(`/compras?q=${encodeURIComponent(record.number)}`);
+  await page.getByRole('button', { name: `Abrir compra ${record.number}`, exact: true }).click();
+}
+test('inventario: administra producto, registra ajuste y consulta el movimiento persistente', async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto('/inventario');
+  await page.getByRole('button', { name: 'Nuevo producto', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  const sku = `E2E-${randomUUID().slice(0, 8)}`;
+  await dialog.getByLabel('Código SKU *', { exact: true }).fill(sku);
+  await dialog
+    .getByLabel('Nombre del producto *', { exact: true })
+    .fill('Accesorio ficticio del navegador');
+  await dialog.getByLabel('Precio de venta (S/) *', { exact: true }).fill('8.75');
+  await dialog.getByLabel('Stock mínimo *', { exact: true }).fill('2.5');
+  const pending = page.waitForResponse(
+    (r) => r.url().endsWith('/api/products') && r.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Guardar ficha', exact: true }).click();
+  const response = await pending;
+  expect(response.status()).toBe(201);
+  const product = await response.json();
+  createdProducts.push(product.id);
+  await expect(dialog).toHaveCount(0);
+  await page.getByLabel('Buscar productos', { exact: true }).fill(sku);
+  await page.getByRole('button', { name: 'Buscar', exact: true }).click();
+  await page.getByRole('button', { name: `Ver producto ${product.sku}`, exact: true }).click();
+  await dialog.getByRole('button', { name: 'Ajustar existencias', exact: true }).click();
+  await dialog.getByLabel('Variación de unidades *', { exact: true }).fill('4.125');
+  await dialog
+    .getByLabel('Motivo del ajuste *', { exact: true })
+    .fill('Saldo ficticio para el recorrido de prueba');
+  await dialog.getByRole('button', { name: 'Registrar ajuste', exact: true }).click();
+  await expect(
+    dialog.getByText('Saldo ficticio para el recorrido de prueba', { exact: true }),
+  ).toBeVisible();
+  await expect(dialog.getByText('4.125 unidades', { exact: true })).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: `Ver producto ${product.sku}`, exact: true }).click();
+  await expect(
+    dialog.getByText('Saldo ficticio para el recorrido de prueba', { exact: true }),
+  ).toBeVisible();
+});
+test('compras: recepción crea proveedor y borrador, edita y recibe una sola vez', async ({
+  page,
+}) => {
+  await login(page);
+  const { product } = await inventoryFixtures(page);
+  await logoutUI(page);
+  await login(page, 'reception');
+  await page.goto('/inventario?tab=suppliers');
+  await page.getByRole('button', { name: 'Nuevo proveedor', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  const name = `Proveedor navegador ${randomUUID().slice(0, 8)}`;
+  await dialog.getByLabel('Nombre del proveedor *', { exact: true }).fill(name);
+  await dialog.getByLabel('Teléfono del proveedor', { exact: true }).fill('000000000');
+  const supplierSaved = page.waitForResponse(
+    (r) => r.url().endsWith('/api/suppliers') && r.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Guardar ficha', exact: true }).click();
+  const supplier = await (await supplierSaved).json();
+  createdSuppliers.push(supplier.id);
+  await expect(dialog).toHaveCount(0);
+  await page.goto('/compras');
+  await page.getByRole('button', { name: 'Nueva compra', exact: true }).click();
+  await dialog.getByLabel('Buscar proveedor *', { exact: true }).fill(name);
+  await dialog.getByRole('button', { name: `Seleccionar proveedor ${name}`, exact: true }).click();
+  await dialog.getByLabel('Buscar producto *', { exact: true }).fill(product.sku);
+  await dialog
+    .getByRole('button', { name: `Seleccionar producto ${product.name}`, exact: true })
+    .click();
+  await dialog.getByLabel(`Cantidad de ${product.sku} *`, { exact: true }).fill('3.125');
+  await dialog.getByLabel(`Costo de ${product.sku} (S/) *`, { exact: true }).fill('0.10');
+  const saved = page.waitForResponse(
+    (r) => r.url().endsWith('/api/purchases') && r.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Guardar borrador', exact: true }).click();
+  const response = await saved;
+  expect(response.status()).toBe(201);
+  let record = await response.json();
+  createdPurchases.push(record.id);
+  await expect(page.getByRole('dialog', { name: record.number, exact: true })).toBeVisible();
+  expect((await (await page.request.get(`/api/products/${product.id}`)).json()).stock).toBe(
+    '0.000',
+  );
+  await dialog.getByRole('button', { name: 'Editar borrador', exact: true }).click();
+  await dialog.getByLabel(`Cantidad de ${product.sku} *`, { exact: true }).fill('4.125');
+  await dialog.getByRole('button', { name: 'Guardar borrador', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: record.number, exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Recibir compra', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Confirmar recepción', exact: true }).click();
+  await expect(dialog.getByText('Recibida', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Recibir compra', exact: true })).toHaveCount(0);
+  await page.reload();
+  await page.getByRole('button', { name: `Abrir compra ${record.number}`, exact: true }).click();
+  await expect(dialog.getByText('Recibida', { exact: true })).toBeVisible();
+  expect((await (await page.request.get(`/api/products/${product.id}`)).json()).stock).toBe(
+    '4.125',
+  );
+});
+test('compras: respuesta perdida después de recibir se reintenta sin duplicar stock', async ({
+  page,
+}) => {
+  await login(page);
+  const { product, supplier } = await inventoryFixtures(page);
+  const record = await purchaseFixture(page, product, supplier);
+  await openPurchase(page, record);
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Recibir compra', exact: true }).click();
+  const path = `**/api/purchases/${record.id}/receive`;
+  await page.route(path, async (route) => {
+    const response = await route.fetch();
+    expect(response.status()).toBe(200);
+    await route.abort();
+  });
+  await dialog.getByRole('button', { name: 'Confirmar recepción', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Tus cambios siguen en el formulario');
+  await page.unroute(path);
+  const pending = page.waitForResponse((r) =>
+    r.url().endsWith(`/api/purchases/${record.id}/receive`),
+  );
+  await dialog.getByRole('button', { name: 'Confirmar recepción', exact: true }).click();
+  const response = await pending;
+  expect(response.headers()['idempotent-replay']).toBe('true');
+  await expect(dialog.getByText('Recibida', { exact: true })).toBeVisible();
+  expect((await (await page.request.get(`/api/products/${product.id}`)).json()).stock).toBe(
+    '3.125',
+  );
+  expect(
+    (await (await page.request.get(`/api/products/${product.id}/movements`)).json()).total,
+  ).toBe(1);
+});
+test('compras: respuesta perdida al crear conserva solicitud y guarda un solo borrador', async ({
+  page,
+}) => {
+  await login(page);
+  const { product, supplier } = await inventoryFixtures(page);
+  await page.goto('/compras');
+  await page.getByRole('button', { name: 'Nueva compra', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Buscar proveedor *', { exact: true }).fill(supplier.name);
+  await dialog
+    .getByRole('button', { name: `Seleccionar proveedor ${supplier.name}`, exact: true })
+    .click();
+  await dialog.getByLabel('Buscar producto *', { exact: true }).fill(product.sku);
+  await dialog
+    .getByRole('button', { name: `Seleccionar producto ${product.name}`, exact: true })
+    .click();
+  let originalId = '';
+  await page.route('**/api/purchases', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    const response = await route.fetch();
+    expect(response.status()).toBe(201);
+    originalId = (await response.json()).id;
+    createdPurchases.push(originalId);
+    await route.abort();
+  });
+  await dialog.getByRole('button', { name: 'Guardar borrador', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Tus cambios siguen en el formulario');
+  await expect(dialog.getByLabel(`Cantidad de ${product.sku} *`, { exact: true })).toBeDisabled();
+  await page.unroute('**/api/purchases');
+  const pending = page.waitForResponse(
+    (r) => r.url().endsWith('/api/purchases') && r.request().method() === 'POST',
+  );
+  await dialog.getByRole('button', { name: 'Reintentar compra', exact: true }).click();
+  const response = await pending;
+  expect((await response.json()).id).toBe(originalId);
+  expect(response.headers()['idempotent-replay']).toBe('true');
+  await expect(dialog.getByText('Borrador', { exact: true })).toBeVisible();
+});
+test('compras móvil: conflicto de edición conserva borrador y permite cancelar sin stock', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  const { product, supplier } = await inventoryFixtures(page);
+  const record = await purchaseFixture(page, product, supplier);
+  await openPurchase(page, record);
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Editar borrador', exact: true }).click();
+  await dialog.getByLabel('Nota de la compra', { exact: true }).fill('Mi borrador local de compra');
+  const updated = await writeFromBrowser(
+    page,
+    `/api/purchases/${record.id}`,
+    {
+      supplierId: supplier.id,
+      note: 'Modificado desde otra sesión',
+      version: 1,
+      lines: [{ productId: product.id, quantity: '5', unitCost: '0.10' }],
+    },
+    'PUT',
+  );
+  expect(updated.status()).toBe(200);
+  await dialog.getByRole('button', { name: 'Guardar borrador', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('Otra persona actualizó este registro');
+  await expect(dialog.getByLabel('Nota de la compra', { exact: true })).toHaveValue(
+    'Mi borrador local de compra',
+  );
+  await dialog.getByRole('button', { name: 'Recargar ficha actual', exact: true }).click();
+  await expect(dialog.getByLabel('Nota de la compra', { exact: true })).toHaveValue(
+    'Modificado desde otra sesión',
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await dialog.getByRole('button', { name: 'Guardar borrador', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: record.number, exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancelar borrador', exact: true }).click();
+  await expect(dialog.getByText('Cancelada', { exact: true })).toBeVisible();
+  expect((await (await page.request.get(`/api/products/${product.id}`)).json()).stock).toBe(
+    '0.000',
+  );
+});
+test('inventario: recepción consulta sin editar catálogo y veterinario no accede a compras', async ({
+  page,
+}) => {
+  await login(page, 'reception');
+  await page.goto('/inventario');
+  await expect(page.getByRole('button', { name: 'Nuevo producto', exact: true })).toHaveCount(0);
+  await page
+    .getByRole('button', { name: /^Ver producto / })
+    .first()
+    .click();
+  await expect(
+    page.getByRole('dialog').getByRole('button', { name: 'Ajustar existencias', exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole('dialog').getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await logoutUI(page);
+  await login(page, 'veterinarian');
+  await page.goto('/compras');
+  await expect(
+    page.getByRole('heading', { name: 'Acceso restringido', exact: true }),
+  ).toBeVisible();
+  expect((await page.request.get('/api/purchases')).status()).toBe(403);
+  expect((await page.request.get('/api/suppliers')).status()).toBe(403);
+});
+test('compras: fallo de lectura muestra error y permite reintentar', async ({ page }) => {
+  await login(page);
+  await page.route('**/api/purchases?*', (route) =>
+    route.fulfill({ status: 503, json: { message: 'Compras temporalmente no disponibles' } }),
+  );
+  await page.goto('/compras');
+  await expect(page.getByRole('alert')).toContainText('Compras temporalmente no disponibles');
+  await page.unroute('**/api/purchases?*');
+  await page.getByRole('button', { name: 'Intentar nuevamente', exact: true }).click();
+  await expect(page.getByRole('columnheader', { name: 'Proveedor', exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('compras: muestra centavos exactos también en importes grandes', async ({ page }) => {
+  await login(page);
+  const { product, supplier } = await inventoryFixtures(page);
+  const response = await writeFromBrowser(page, '/api/purchases', {
+    requestId: randomUUID(),
+    supplierId: supplier.id,
+    note: 'Prueba ficticia de precisión',
+    lines: [{ productId: product.id, quantity: '999999999', unitCost: '99999.99' }],
+  });
+  expect(response.status()).toBe(201);
+  const record = await response.json();
+  createdPurchases.push(record.id);
+  expect(record.total).toBe('99999989900000.01');
+  await openPurchase(page, record);
+  await expect(page.getByRole('dialog').getByText(/99,999,989,900,000\.01/)).toHaveCount(2);
 });

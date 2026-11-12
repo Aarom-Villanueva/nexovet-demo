@@ -16,6 +16,7 @@ import {
 import type { SendResetMail, ResetMail } from './mail.js';
 import { registerPatients } from '../patients/routes.js';
 import { registerAgenda } from '../agenda/routes.js';
+import { registerInventory } from '../inventory/routes.js';
 import { registerFollowups } from '../follow-ups/routes.js';
 
 interface Identity {
@@ -335,14 +336,6 @@ export async function registerAuth(app: FastifyInstance, options: AuthOptions) {
     }
   }
   app.get('/api/overview', { preHandler: requireSession }, overview);
-  for (const [path, field, roles] of [
-    ['/api/products', 'products', ['admin', 'reception']],
-  ] as const) {
-    app.get(path, { preHandler: [requireSession, permit(roles)] }, async (request, reply) => {
-      const data = await overview(request, reply);
-      return reply.sent ? reply : (data as DemoOverview)[field];
-    });
-  }
   app.get(
     '/api/users',
     { preHandler: [requireSession, permit(['admin'])] },
@@ -356,4 +349,5 @@ export async function registerAuth(app: FastifyInstance, options: AuthOptions) {
   await registerPatients(app, { pool, requireSession, requireWrite, permit });
   await registerAgenda(app, { pool, requireSession, requireWrite, permit });
   await registerFollowups(app, { pool, requireSession, requireWrite, permit });
+  await registerInventory(app, { pool, requireSession, requireWrite, permit });
 }

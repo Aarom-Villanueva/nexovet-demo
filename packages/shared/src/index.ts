@@ -281,3 +281,102 @@ export interface DemoOverview {
   }>;
   tasks: Array<{ id: string; title: string; client: string; dueAt: string; status: string }>;
 }
+
+export interface ProductInput {
+  sku: string;
+  name: string;
+  categoryId: string | null;
+  salePrice: string;
+  minimumStock: string;
+  active: boolean;
+}
+export interface ProductRecord extends ProductInput {
+  id: string;
+  categoryName: string | null;
+  stock: string;
+  lowStock: boolean;
+  version: number;
+  updatedAt: string;
+}
+export interface SupplierInput {
+  name: string;
+  taxId: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  active: boolean;
+}
+export interface SupplierRecord extends SupplierInput {
+  id: string;
+  version: number;
+  updatedAt: string;
+}
+export interface PurchaseLineInput {
+  productId: string;
+  quantity: string;
+  unitCost: string;
+}
+export interface PurchaseInput {
+  supplierId: string;
+  note: string;
+  lines: PurchaseLineInput[];
+}
+export const purchaseStatusLabels = {
+  draft: 'Borrador',
+  received: 'Recibida',
+  cancelled: 'Cancelada',
+} as const;
+export interface PurchaseRecord {
+  id: string;
+  number: string;
+  supplierId: string;
+  supplierName: string;
+  status: keyof typeof purchaseStatusLabels;
+  note: string;
+  version: number;
+  orderedAt: string;
+  updatedAt: string;
+  receivedAt: string | null;
+  createdByName: string;
+  receivedByName: string | null;
+  total: string;
+  lineCount: number;
+}
+export interface PurchaseDetail extends PurchaseRecord {
+  lines: Array<
+    PurchaseLineInput & {
+      id: string;
+      sku: string;
+      productName: string;
+      productActive: boolean;
+      lineTotal: string;
+    }
+  >;
+}
+export const stockKindLabels = {
+  opening: 'Saldo inicial',
+  purchase: 'Compra recibida',
+  sale: 'Venta',
+  adjustment: 'Ajuste',
+} as const;
+export interface StockMovement {
+  id: string;
+  productId: string;
+  quantity: string;
+  kind: keyof typeof stockKindLabels;
+  reason: string;
+  recordedByName: string;
+  createdAt: string;
+  purchaseId: string | null;
+  purchaseNumber: string | null;
+}
+export interface StockAdjustmentInput {
+  requestId: string;
+  quantity: string;
+  reason: string;
+}
+export interface InventoryStats {
+  active: number;
+  low: number;
+  empty: number;
+}

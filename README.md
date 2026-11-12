@@ -1,6 +1,6 @@
 # NexoVet — Demo interactiva
 
-## Aplicación en desarrollo — bloques 1 a 6
+## Aplicación en desarrollo — bloques 1 a 7
 
 La nueva aplicación está en `apps/web` (React + TypeScript) y `apps/api`
 (Node.js + Fastify), con PostgreSQL en `database/`. Incluye migraciones,
@@ -13,13 +13,15 @@ La demo estática de esta carpeta continúa siendo la referencia visual publicad
 - [Clientes y mascotas](docs/CLIENTES-Y-MASCOTAS.md)
 - [Agenda y atención](docs/AGENDA-Y-ATENCION.md)
 - [Seguimientos y contactos](docs/SEGUIMIENTOS-Y-CONTACTOS.md)
+- [Inventario y compras](docs/INVENTARIO-Y-COMPRAS.md)
 - [Plan de los diez bloques](docs/PLAN.md)
 
 El bloque 3 añade login, sesiones, recuperación de contraseña y permisos en la API.
 Clientes y mascotas tienen fichas, filtros, archivo reversible y paginación.
 La agenda permite programar y reprogramar visitas, registrar llegada y realizar
 atenciones con historia clínica. Seguimiento incorpora tareas por responsable,
-vencimientos y registro manual de contactos. Compras y ventas siguen en preparación.
+vencimientos y registro manual de contactos. El inventario incorpora productos,
+proveedores, ajustes y recepción de compras que ingresa stock. Ventas sigue en preparación.
 Consulta [Autenticación](docs/AUTENTICACION.md) para crear accesos locales y configurar correo.
 
 ---
