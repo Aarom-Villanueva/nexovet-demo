@@ -6,7 +6,7 @@
 | 2      | PostgreSQL, migraciones, relaciones, restricciones y datos ficticios | Implementado; límites documentados en BASE-DE-DATOS.md  |
 | 3      | Login, sesiones, recuperación y autorización por rol                 | Implementado; correo local/SMTP y roles documentados    |
 | 4      | Registro/edición/búsqueda de clientes y mascotas                     | Implementado; fichas, paginación y control de edición   |
-| 5      | Gestión de agenda y atención veterinaria                             | Pendiente; agenda de muestra disponible                 |
+| 5      | Gestión de agenda y atención veterinaria                             | Implementado; agenda, atención e historia clínica       |
 | 6      | Seguimientos, recordatorios y registro de contactos                  | Pendiente; vista de muestra disponible                  |
 | 7      | Inventario, proveedores y recepción de compras                       | Pendiente; catálogo y stock de muestra disponibles      |
 | 8      | Ventas, registro de cobros y movimientos asociados                   | Pendiente                                               |
@@ -20,3 +20,8 @@ pruebas propias. Las pruebas finales del bloque 10 no sustituyen esas verificaci
 Primera versión: una sede y uso interno por personal. La demostración estática
 continúa en la raíz para mantener disponible el enlace del portafolio. Los cambios
 se revisan por rama/pull request antes de integrarlos a `main`.
+
+El primer hito (bloques 1–5) ya permite el recorrido interno completo: crear cliente
+y paciente, reservar cita, registrar llegada, iniciar la consulta con el veterinario
+asignado y cerrarla. Aún faltan seguimiento operativo, inventario/compras, ventas,
+reportes/configuración y la verificación del despliegue. No es una reserva pública.

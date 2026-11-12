@@ -69,7 +69,7 @@ interface FieldProps {
   }) => ReactNode;
   wide?: boolean;
 }
-function Field({ label, name, error, children, wide }: FieldProps) {
+export function Field({ label, name, error, children, wide }: FieldProps) {
   const id = useId();
   return (
     <div className={`record-field ${wide ? 'field-wide' : ''}`}>
@@ -87,7 +87,13 @@ function Field({ label, name, error, children, wide }: FieldProps) {
     </div>
   );
 }
-function ErrorNotice({ error, onReload }: { error: ApiError | null; onReload?: () => void }) {
+export function ErrorNotice({
+  error,
+  onReload,
+}: {
+  error: ApiError | null;
+  onReload?: () => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (error) ref.current?.focus();

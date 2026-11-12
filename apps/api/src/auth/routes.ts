@@ -15,6 +15,7 @@ import {
 } from './crypto.js';
 import type { SendResetMail, ResetMail } from './mail.js';
 import { registerPatients } from '../patients/routes.js';
+import { registerAgenda } from '../agenda/routes.js';
 
 interface Identity {
   user: AuthUser;
@@ -352,4 +353,5 @@ export async function registerAuth(app: FastifyInstance, options: AuthOptions) {
       ).rows,
   );
   await registerPatients(app, { pool, requireSession, requireWrite, permit });
+  await registerAgenda(app, { pool, requireSession, requireWrite, permit });
 }

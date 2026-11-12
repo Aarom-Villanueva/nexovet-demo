@@ -22,6 +22,7 @@ import { Table, date } from '../components';
 import { useAuth } from '../auth';
 import { useApi } from '../api';
 import { ClientForm, PetForm, Dialog } from './Forms';
+import { HistoryDialog } from '../agenda/Care';
 
 function useRead<T>(url: string, attempt = 0) {
   const api = useApi();
@@ -208,10 +209,12 @@ function PetDetails({
   pet,
   onClose,
   onEdit,
+  onHistory,
 }: {
   pet: PetRecord;
   onClose: () => void;
   onEdit?: () => void;
+  onHistory?: () => void;
 }) {
   return (
     <Dialog title={pet.name} onClose={onClose}>
@@ -251,6 +254,11 @@ function PetDetails({
         </div>
       </div>
       <div className="record-dialog-actions">
+        {onHistory && (
+          <button className="button" onClick={onHistory}>
+            Historia clínica
+          </button>
+        )}
         <button className="secondary-button" onClick={onClose}>
           Cerrar
         </button>
@@ -262,7 +270,8 @@ type OpenDialog =
   | { kind: 'clientForm'; record?: ClientRecord }
   | { kind: 'clientDetails'; record: ClientRecord }
   | { kind: 'petForm'; record?: PetRecord; owner?: ClientRecord }
-  | { kind: 'petDetails'; record: PetRecord };
+  | { kind: 'petDetails'; record: PetRecord }
+  | { kind: 'petHistory'; record: PetRecord };
 export function PatientDirectory() {
   const auth = useAuth();
   const api = useApi();
@@ -617,7 +626,19 @@ export function PatientDirectory() {
         <PetDetails
           pet={dialog.record}
           onClose={() => setDialog(null)}
+          onHistory={
+            auth.session!.user.role !== 'reception'
+              ? () => setDialog({ kind: 'petHistory', record: dialog.record })
+              : undefined
+          }
           onEdit={manage ? () => setDialog({ kind: 'petForm', record: dialog.record }) : undefined}
+        />
+      )}
+      {dialog?.kind === 'petHistory' && (
+        <HistoryDialog
+          petId={dialog.record.id}
+          petName={dialog.record.name}
+          onClose={() => setDialog(null)}
         />
       )}
     </section>

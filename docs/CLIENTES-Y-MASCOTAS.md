@@ -123,6 +123,7 @@ duplicados, conflicto con otra sesión, conservación de borrador ante fallo de 
 recarga y formularios móviles. Sus fichas sintéticas también se limpian al terminar.
 
 No incluye importación masiva, fotos/adjuntos, transferencias de propietario,
-fusión automática de duplicados, historial de cambios con valores, citas o atención
-operativa. Agenda y atención corresponden al bloque 5. Aún no desplegar con datos
+fusión automática de duplicados ni historial de cambios con valores.
+[El bloque 5](AGENDA-Y-ATENCION.md) añade agenda y atención operativa, e historia
+clínica desde la ficha del paciente para administrador y veterinario. Aún no desplegar con datos
 reales: faltan los siguientes módulos y la verificación del despliegue del bloque 10.
