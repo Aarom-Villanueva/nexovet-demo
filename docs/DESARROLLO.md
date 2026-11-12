@@ -45,6 +45,8 @@ y contactos manuales con reintentos que evitan duplicados; no envía comunicacio
 registrar ajustes justificados y recibir compras con entradas transaccionales.
 [El bloque 8](VENTAS-Y-COBROS.md) incorpora ventas mixtas y cobros manuales completos,
 confirmados junto con sus salidas de stock y auditoría.
+[El bloque 9](REPORTES-Y-ADMINISTRACION.md) incorpora reportes/CSV, configuración y
+auditoría de solo lectura; el equipo y servicios se mantienen desde Administración.
 [El bloque 4](CLIENTES-Y-MASCOTAS.md) permite registrar, editar, buscar y archivar
 fichas. Administrador y recepción escriben; veterinario solo consulta pacientes.
 [El bloque 5](AGENDA-Y-ATENCION.md) conecta las citas con el registro de atención

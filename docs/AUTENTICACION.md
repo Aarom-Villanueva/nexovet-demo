@@ -38,7 +38,7 @@ recuperación, no volver a ejecutar el comando para sobrescribirla.
 | Registrar, editar y archivar clientes/mascotas     | Sí             | Sí             | No                     |
 | Inventario y precios                               | Sí             | Sí             | No                     |
 | Ventas y registro de cobros                        | Sí             | Sí             | No                     |
-| Ruta de reportes (en preparación)                  | Sí             | No             | No                     |
+| Reportes, exportación y auditoría                  | Sí             | No             | No                     |
 | Programar/reprogramar citas y registrar asistencia | Sí             | Sí             | No                     |
 | Consultar historia y notas de atención             | Sí             | No             | Sí                     |
 | Escribir/cerrar una atención                       | No             | No             | Solo asignado          |
@@ -49,7 +49,7 @@ el listado de contactos ni los datos comerciales. El resumen de su API omite
 las filas de clientes y productos, y oculta el agregado de productos (`null`).
 En esta etapa, los tres roles autorizados pueden consultar los pacientes y citas
 de la misma sede; no se restringen a un profesional asignado. No hay separación
-entre clínicas. La ruta de reportes sigue en preparación. El [bloque 5](AGENDA-Y-ATENCION.md) aplica permisos de agenda y de atención por operación. El [bloque 6](SEGUIMIENTOS-Y-CONTACTOS.md) limita las tareas del veterinario a las asignadas a su cuenta y reserva los contactos a administración y recepción.
+entre clínicas. Los reportes y la administración del bloque 9 son exclusivos del administrador. El [bloque 5](AGENDA-Y-ATENCION.md) aplica permisos de agenda y de atención por operación. El [bloque 6](SEGUIMIENTOS-Y-CONTACTOS.md) limita las tareas del veterinario a las asignadas a su cuenta y reserva los contactos a administración y recepción.
 
 El [bloque 7](INVENTARIO-Y-COMPRAS.md) permite a administración y recepción consultar inventario y gestionar proveedores/compras. Solo administración mantiene el catálogo y registra ajustes de stock.
 
@@ -123,8 +123,8 @@ unset NEW_USER_PASSWORD
 
 En otro terminal/sistema operativo usar su mecanismo de variables secretas.
 El comando crea una cuenta y audita el aprovisionamiento; rechaza correos existentes,
-sin sobrescribir usuarios ni contraseñas. Edición de usuarios y configuración por
-interfaz quedan para el bloque 9. No convertir las cuentas ficticias en cuentas reales.
+sin sobrescribir usuarios ni contraseñas. El [bloque 9](REPORTES-Y-ADMINISTRACION.md) permite crear y editar cuentas y
+configuración desde la interfaz, con versiones y revocación transaccional de sesiones. No convertir las cuentas ficticias en cuentas reales.
 
 ## Mantenimiento y verificación
 

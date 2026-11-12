@@ -1,0 +1,270 @@
+.management-page .button,
+.report-page .button {
+  margin-top: 0;
+}
+.management-tabs {
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+.management-toolbar {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+.management-toolbar > .record-help {
+  max-width: 650px;
+}
+.management-toolbar > .button {
+  flex-shrink: 0;
+}
+.management-period {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+  flex-wrap: wrap;
+  padding: 22px;
+  margin-bottom: 22px;
+}
+.management-period label,
+.audit-filters > label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #50694e;
+  display: grid;
+  gap: 8px;
+}
+.management-period input,
+.audit-filters input,
+.audit-filters select {
+  font: inherit;
+  color: #425d46;
+  padding: 11px;
+  border: 1px solid #dce5d5;
+  border-radius: 8px;
+  background: white;
+  min-height: 42px;
+}
+.management-period .record-help,
+.audit-filters .record-help {
+  flex-basis: 100%;
+}
+.management-panel {
+  margin-bottom: 22px;
+  padding: 22px;
+}
+.management-panel h2 {
+  font-size: 18px;
+  color: #37573f;
+  margin-bottom: 14px;
+}
+.management-panel h3 {
+  font-size: 15px;
+  color: #4e6d49;
+  margin: 22px 0 10px;
+}
+.management-panel .record-help {
+  margin-bottom: 14px;
+}
+.management-panel .table-scroll {
+  margin-top: 16px;
+}
+.management-panel table {
+  min-width: 420px;
+}
+.management-panel input,
+.management-panel textarea {
+  max-width: 100%;
+}
+.management-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+}
+.report-financial {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.report-financial strong {
+  font-size: 25px;
+  overflow-wrap: anywhere;
+}
+.report-financial small {
+  display: block;
+  color: #839378;
+  margin-top: 10px;
+  font-size: 11px;
+}
+.report-context {
+  font-size: 12px;
+  color: #87957e;
+  margin-bottom: 18px;
+}
+.report-space {
+  margin: 0 0 22px;
+}
+.management-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin: 20px 0;
+}
+.management-kpis > div {
+  padding: 15px;
+  border: 1px solid #e2ebd9;
+  border-radius: 10px;
+  background: #fafcf7;
+}
+.management-kpis span {
+  display: block;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #7c8e73;
+}
+.management-kpis strong {
+  display: block;
+  font-size: 24px;
+  color: #436344;
+  margin-top: 10px;
+}
+.report-bars {
+  height: 190px;
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  align-items: stretch;
+  border-bottom: 1px solid #dde8d5;
+  padding-top: 10px;
+  margin: 18px 0;
+}
+.report-bars > button {
+  flex: 1;
+  min-width: 16px;
+  position: relative;
+  border: 0;
+  background: transparent;
+  padding: 0 0 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+}
+.report-bars > button[aria-pressed='true'] {
+  background: #f2f7ed;
+}
+.report-bars > button:focus-visible {
+  outline: 2px solid #235f4d;
+  outline-offset: -2px;
+}
+.report-bar {
+  display: block;
+  width: 80%;
+  max-width: 32px;
+  background: #86a97b;
+  border-radius: 4px 4px 0 0;
+  min-height: 1px;
+}
+.report-bars > button[aria-pressed='true'] .report-bar {
+  background: #2e725a;
+}
+.report-bars small {
+  position: absolute;
+  bottom: 5px;
+  color: #8b9b80;
+  font-size: 10px;
+}
+.report-day {
+  font-size: 13px;
+  color: #4b6b47;
+  padding: 12px;
+  background: #f3f8ed;
+  border-radius: 8px;
+}
+.audit-filters {
+  align-items: end;
+}
+.audit-code {
+  overflow-wrap: anywhere;
+  max-width: 190px;
+}
+.audit-id {
+  display: block;
+  font-size: 10px;
+  max-width: 200px;
+  overflow-wrap: anywhere;
+  color: #8b987e;
+  margin: 9px 0;
+}
+.audit-summary {
+  font-size: 11px;
+  line-height: 1.7;
+  min-width: 140px;
+}
+.audit-summary > div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.audit-summary dt {
+  color: #869578;
+}
+.audit-summary dd {
+  color: #566c4d;
+  overflow-wrap: anywhere;
+}
+.admin-today {
+  margin-bottom: 24px;
+}
+.admin-today .management-kpis {
+  margin: 0;
+}
+.admin-today h2 {
+  font-size: 16px;
+  color: #56704f;
+  margin: 0 0 14px;
+}
+@media (max-width: 900px) {
+  .management-columns {
+    grid-template-columns: 1fr;
+  }
+  .management-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .management-period,
+  .management-toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .management-period .button,
+  .management-toolbar .button {
+    width: 100%;
+    justify-content: center;
+  }
+  .report-financial {
+    grid-template-columns: 1fr;
+  }
+  .management-tabs {
+    white-space: nowrap;
+  }
+  .management-panel {
+    padding: 16px;
+  }
+  .audit-filters > label {
+    width: 100%;
+  }
+  .management-kpis {
+    gap: 10px;
+  }
+  .management-kpis > div {
+    padding: 12px;
+  }
+  .management-kpis strong {
+    font-size: 20px;
+  }
+  .report-page .directory-heading > .secondary-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

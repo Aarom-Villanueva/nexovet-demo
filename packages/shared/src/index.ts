@@ -250,6 +250,7 @@ export interface ContactRecord {
   createdAt: string;
 }
 export interface DemoOverview {
+  adminToday?: TodayIndicators;
   demo: boolean;
   businessName: string;
   today: string;
@@ -461,4 +462,101 @@ export interface SaleDetail extends SaleRecord {
     }
   >;
   payments: PaymentRecord[];
+}
+
+export interface BusinessSettings {
+  name: string;
+  address: string;
+  currency: 'PEN';
+  timezone: 'America/Lima';
+  demo: boolean;
+  version: number;
+  updatedAt: string;
+}
+export interface ServiceInput {
+  name: string;
+  durationMinutes: number;
+  price: string;
+  active: boolean;
+}
+export interface ServiceRecord extends ServiceInput {
+  id: string;
+  version: number;
+  updatedAt: string;
+}
+export interface CategoryRecord {
+  id: string;
+  name: string;
+  version: number;
+  updatedAt: string;
+}
+export interface UserAccount extends AuthUser {
+  active: boolean;
+  loginEnabled: boolean;
+  hasPassword: boolean;
+  version: number;
+  updatedAt: string;
+}
+export interface UserAccountInput {
+  name: string;
+  email: string;
+  role: Role;
+  active: boolean;
+  loginEnabled: boolean;
+  password: string;
+}
+export interface UserAccountEdit {
+  name: string;
+  role: Role;
+  active: boolean;
+  loginEnabled: boolean;
+  password: string | null;
+  version: number;
+}
+export interface TodayIndicators {
+  confirmedSales: number;
+  registeredPayments: string;
+  receivedPurchases: number;
+  lowStock: number;
+}
+export interface OperationsReport {
+  from: string;
+  to: string;
+  generatedAt: string;
+  businessName: string;
+  financial: {
+    confirmedSales: number;
+    salesTotal: string;
+    paymentCount: number;
+    paymentsTotal: string;
+    receivedPurchases: number;
+    purchasesTotal: string;
+  };
+  activity: { appointments: number; closedEncounters: number; newClients: number; newPets: number };
+  followups: { pending: number; completed: number; cancelled: number; overdue: number };
+  inventory: { active: number; low: number; empty: number };
+  dailySales: Array<{ date: string; count: number; total: string }>;
+  paymentsByMethod: Array<{
+    method: keyof typeof paymentMethodLabels;
+    count: number;
+    total: string;
+  }>;
+  appointmentsByStatus: Array<{ status: AppointmentStatus; count: number }>;
+  topItems: Array<{
+    kind: SaleItemKind;
+    itemId: string;
+    name: string;
+    quantity: string;
+    total: string;
+  }>;
+}
+export interface AuditRecord {
+  id: string;
+  actorId: string | null;
+  actorName: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  createdAt: string;
+  summary: Record<string, string | number | boolean | string[]>;
 }

@@ -21,7 +21,7 @@ directa. Las escrituras requieren sesión vigente, origen permitido y token CSRF
 **Inventario** contiene las pestañas Productos y Proveedores. Los productos tienen
 SKU único sin distinguir mayúsculas, nombre, categoría opcional, precio de venta,
 stock mínimo y estado activo/archivado. Las cuatro categorías iniciales son de
-consulta; su mantenimiento no se incorpora en este bloque. Los productos nuevos
+consulta; su mantenimiento se incorpora en Administración del [bloque 9](REPORTES-Y-ADMINISTRACION.md). Los productos nuevos
 parten de saldo cero. No hay un campo para sobrescribir directamente el stock.
 
 Se busca por nombre o SKU, se filtra por actividad, categoría y existencias, y se

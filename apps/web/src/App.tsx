@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { NavLink, Navigate, Route, Routes, useLocation, Link } from 'react-router-dom';
 import {
   Activity,
@@ -19,15 +19,18 @@ import {
   UsersRound,
   X,
 } from 'lucide-react';
-import { canVisit, roleLabels, type DemoOverview, type AuthUser } from '@nexovet/shared';
+import { canVisit, roleLabels, type DemoOverview } from '@nexovet/shared';
 import { AuthProvider, LoginPage, useAuth } from './auth';
 import { useOverview } from './useOverview';
 import { PatientDirectory } from './patients/Directory';
 import { Agenda } from './agenda/Agenda';
+import { Reports } from './management/Reports';
+import { Administration } from './management/Administration';
+import { money as exactMoney } from './inventory/common';
 import { SalesBoard } from './sales/Board';
 import { InventoryBoard, PurchaseBoard } from './inventory/Boards';
 import { FollowupBoard } from './follow-ups/Board';
-import { Appointments, date, labels, money, SectionTitle, Status, Table } from './components';
+import { Appointments, date, SectionTitle } from './components';
 
 const navigation = [
   { to: '/', label: 'Resumen', icon: LayoutDashboard },
@@ -110,6 +113,24 @@ function Overview({ data }: { data: DemoOverview }) {
           </article>
         ))}
       </section>
+      {data.adminToday && (
+        <section className="admin-today" aria-label="Indicadores administrativos de hoy">
+          <h2>Operación de hoy · Hora de Lima</h2>
+          <div className="management-kpis">
+            {[
+              ['Ventas confirmadas hoy', String(data.adminToday.confirmedSales)],
+              ['Cobros registrados hoy', exactMoney(data.adminToday.registeredPayments)],
+              ['Compras recibidas hoy', String(data.adminToday.receivedPurchases)],
+              ['Productos con stock bajo ahora', String(data.adminToday.lowStock)],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <span>{label}</span>
+                <strong>{value}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       <section className="panel">
         <SectionTitle
           title="La agenda de hoy"
@@ -156,71 +177,7 @@ function Overview({ data }: { data: DemoOverview }) {
     </>
   );
 }
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <section className="panel empty">
-      <HeartPulse size={36} />
-      <h2>{title}, en preparación</h2>
-      <p>
-        Esta sección todavía no está disponible. Puedes recorrer los datos de ejemplo desde el
-        resumen.
-      </p>
-      <Link className="button" to="/">
-        Volver al resumen <ArrowRight size={16} />
-      </Link>
-    </section>
-  );
-}
-function UserAccounts() {
-  const auth = useAuth();
-  const [users, setUsers] = useState<Array<
-    AuthUser & { active: boolean; loginEnabled: boolean }
-  > | null>(null);
-  const [error, setError] = useState(false);
-  useEffect(() => {
-    const controller = new AbortController();
-    void fetch('/api/users', {
-      signal: controller.signal,
-      credentials: 'same-origin',
-      cache: 'no-store',
-    })
-      .then(async (response) => {
-        if (response.status === 401) auth.expire();
-        if (!response.ok) throw new Error('No disponible');
-        const value = await response.json();
-        if (!controller.signal.aborted) setUsers(value);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setError(true);
-      });
-    return () => controller.abort();
-  }, []);
-  return (
-    <section className="panel">
-      <SectionTitle
-        title="Accesos del equipo"
-        subtitle="Consulta los roles y accesos habilitados de tu equipo."
-      />
-      {error ? (
-        <p role="alert">No se pudieron consultar los accesos. Recarga la página para reintentar.</p>
-      ) : !users ? (
-        <p role="status">Cargando accesos…</p>
-      ) : (
-        <Table headers={['Nombre', 'Correo', 'Rol', 'Acceso']}>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>{user.name}</td>
-              <td>{user.email}</td>
-              <td>{roleLabels[user.role]}</td>
-              <td>{user.active && user.loginEnabled ? 'Habilitado' : 'Deshabilitado'}</td>
-            </tr>
-          ))}
-        </Table>
-      )}
-    </section>
-  );
-}
-function DataViews({ data }: { data: DemoOverview }) {
+function DataViews({ data, refreshOverview }: { data: DemoOverview; refreshOverview: () => void }) {
   const auth = useAuth();
   const role = auth.session!.user.role;
   const location = useLocation();
@@ -246,13 +203,11 @@ function DataViews({ data }: { data: DemoOverview }) {
       <Route path="/compras" element={<PurchaseBoard />} />
       <Route path="/ventas" element={<SalesBoard />} />
       <Route path="/seguimiento" element={<FollowupBoard />} />
-      <Route path="/administracion" element={<UserAccounts />} />
-      {navigation
-        .slice(7)
-        .filter((item) => item.to !== '/administracion')
-        .map((item) => (
-          <Route key={item.to} path={item.to} element={<ComingSoon title={item.label} />} />
-        ))}
+      <Route
+        path="/administracion"
+        element={<Administration onBusinessSaved={refreshOverview} />}
+      />
+      <Route path="/reportes" element={<Reports />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -431,7 +386,7 @@ function Workspace() {
                   </button>
                 </p>
               )}
-              <DataViews data={data} />
+              <DataViews data={data} refreshOverview={retry} />
             </>
           )}
           <footer className="page-footer">
