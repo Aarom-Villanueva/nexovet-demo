@@ -8,6 +8,7 @@ import './agenda/styles.css';
 import './follow-ups/styles.css';
 import './inventory/styles.css';
 import './sales/styles.css';
+import './management/styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

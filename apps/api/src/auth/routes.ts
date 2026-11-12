@@ -16,6 +16,7 @@ import {
 import type { SendResetMail, ResetMail } from './mail.js';
 import { registerPatients } from '../patients/routes.js';
 import { registerAgenda } from '../agenda/routes.js';
+import { registerManagement } from '../management/routes.js';
 import { registerSales } from '../sales/routes.js';
 import { registerInventory } from '../inventory/routes.js';
 import { registerFollowups } from '../follow-ups/routes.js';
@@ -300,7 +301,10 @@ export async function registerAuth(app: FastifyInstance, options: AuthOptions) {
           .code(400)
           .send({ message: 'El enlace venció o ya se utilizó. Solicita uno nuevo.' });
       }
-      await client.query('UPDATE users SET password_hash=$2 WHERE id=$1', [user!.id, hash]);
+      await client.query(
+        'UPDATE users SET password_hash=$2,version=version+1,updated_at=now() WHERE id=$1',
+        [user!.id, hash],
+      );
       await client.query(
         'UPDATE user_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL',
         [user!.id],
@@ -352,4 +356,5 @@ export async function registerAuth(app: FastifyInstance, options: AuthOptions) {
   await registerFollowups(app, { pool, requireSession, requireWrite, permit });
   await registerInventory(app, { pool, requireSession, requireWrite, permit });
   await registerSales(app, { pool, requireSession, requireWrite, permit });
+  await registerManagement(app, { pool, requireSession, requireWrite, permit });
 }

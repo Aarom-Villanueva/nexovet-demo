@@ -87,7 +87,7 @@ export async function audit(
   r: FastifyRequest,
   action: string,
   type: string,
-  id: string,
+  id: string | null,
   metadata: Record<string, unknown> = {},
 ) {
   await c.query(

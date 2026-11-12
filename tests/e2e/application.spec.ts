@@ -12,12 +12,15 @@ const credentials: { accounts: Array<{ email: string; role: string; password: st
   JSON.parse(await readFile(`${root}/.local/demo-credentials-${database}.json`, 'utf8'));
 let agendaDoctor: { id: string; name: string; email: string };
 let clinicalUserId: string | undefined;
+let originalBusiness: { name: string; address: string };
+const ownedBusinessNames = new Set<string>();
 test.beforeAll(async () => {
   const { default: pg } = await import('pg');
   const pool = new pg.Pool({ connectionString: databaseUrl });
   try {
     if (!(await pool.query('SELECT 1 FROM business_settings WHERE is_demo')).rowCount)
       throw new Error('E2E requiere una veterinaria ficticia');
+    originalBusiness = (await pool.query('SELECT name,address FROM business_settings')).rows[0];
     // La agenda clínica usa un profesional propio de la suite. Los horarios
     // próximos a "ahora" no deben competir con las citas de la semilla.
     const { hashPassword } = await import('../../apps/api/src/auth/crypto');
@@ -249,6 +252,9 @@ const createdProducts: string[] = [];
 const createdSuppliers: string[] = [];
 const createdPurchases: string[] = [];
 const createdSales: string[] = [];
+const createdConfigUsers: string[] = [];
+const createdConfigServices: string[] = [];
+const createdConfigCategories: string[] = [];
 test.afterAll(async () => {
   const { default: pg } = await import('pg');
   const pool = new pg.Pool({ connectionString: databaseUrl });
@@ -297,6 +303,41 @@ test.afterAll(async () => {
     await pool.query('DELETE FROM appointments WHERE id=ANY($1::uuid[])', [createdAppointments]);
     await pool.query('DELETE FROM pets WHERE id=ANY($1::uuid[])', [createdPets]);
     await pool.query('DELETE FROM clients WHERE id=ANY($1::uuid[])', [createdClients]);
+    await pool.query('UPDATE products SET category_id=NULL WHERE id=ANY($1::uuid[])', [
+      createdProducts,
+    ]);
+    await pool.query('UPDATE services SET active=false WHERE id=ANY($1::uuid[])', [
+      createdConfigServices,
+    ]);
+    await pool.query('DELETE FROM product_categories WHERE id=ANY($1::uuid[])', [
+      createdConfigCategories,
+    ]);
+    await pool.query(
+      'UPDATE user_sessions SET revoked_at=now() WHERE user_id=ANY($1::uuid[]) AND revoked_at IS NULL',
+      [createdConfigUsers],
+    );
+    await pool.query('UPDATE users SET active=false,login_enabled=false WHERE id=ANY($1::uuid[])', [
+      createdConfigUsers,
+    ]);
+    const b = (await pool.query('SELECT name FROM business_settings')).rows[0];
+    if (originalBusiness && ownedBusinessNames.has(b.name)) {
+      await pool.query('BEGIN');
+      try {
+        const restored = await pool.query(
+          'UPDATE business_settings SET name=$1,address=$2,version=version+1,updated_at=now() WHERE name=$3',
+          [originalBusiness.name, originalBusiness.address, b.name],
+        );
+        if (restored.rowCount)
+          await pool.query(
+            "INSERT INTO audit_logs(actor_id,action,entity_type,metadata) VALUES($1,'test.business_restored','settings','{}')",
+            [actor],
+          );
+        await pool.query('COMMIT');
+      } catch (e) {
+        await pool.query('ROLLBACK');
+        throw e;
+      }
+    }
   } finally {
     await pool.end();
   }
@@ -1719,4 +1760,388 @@ test('ventas: total cero confirma sin cobros y descuenta el producto', async ({ 
   expect((await confirmSale(page)).status()).toBe(200);
   await expect(d.getByText('Venta con total cero, sin cobros.', { exact: true })).toBeVisible();
   expect((await (await page.request.get(`/api/products/${p.id}`)).json()).stock).toBe('2.000');
+});
+
+test('reportes: período sin operaciones, gráfico interactivo y descarga CSV real', async ({
+  page,
+}) => {
+  await login(page);
+  await expect(
+    page.getByRole('region', { name: 'Indicadores administrativos de hoy', exact: true }),
+  ).toBeVisible();
+  let releaseOptions: () => void = () => {};
+  const gate = new Promise<void>((resolve) => {
+    releaseOptions = resolve;
+  });
+  await page.route('**/api/reports/options', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await page.getByRole('link', { name: 'Reportes', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Reportes operativos', exact: true }),
+  ).toBeVisible();
+  await page.getByLabel('Reporte desde', { exact: true }).fill('2000-01-01');
+  await page.getByLabel('Reporte hasta', { exact: true }).fill('2000-01-02');
+  const optionsResponse = page.waitForResponse(
+    (r) => r.url().endsWith('/api/reports/options') && r.status() === 200,
+  );
+  releaseOptions();
+  await optionsResponse;
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  await expect(page.getByLabel('Reporte desde', { exact: true })).toHaveValue('2000-01-01');
+  await expect(page.getByLabel('Reporte hasta', { exact: true })).toHaveValue('2000-01-02');
+  const pending = page.waitForResponse(
+    (r) => r.url().includes('/api/reports/operations?') && r.url().includes('from=2000-01-01'),
+  );
+  await page.getByRole('button', { name: 'Actualizar reporte', exact: true }).click();
+  const r = await pending;
+  expect(r.status()).toBe(200);
+  expect((await r.json()).financial.salesTotal).toBe('0.00');
+  await page.getByRole('button', { name: 'Ver día 2000-01-01', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('2000-01-01 · 0 ventas confirmadas');
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exportar CSV', exact: true }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('nexovet-reporte-2000-01-01-2000-01-02.csv');
+  const text = await readFile((await download.path())!, 'utf8');
+  expect(text).toContain('"Total confirmado PEN","0.00"');
+  expect(text).toContain('"2000-01-01"');
+  expect(text).not.toMatch(/password_hash|token_hash/);
+});
+test('administración: crea categoría y servicio, y los cambios llegan al catálogo operativo', async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await login(page);
+  await page.goto('/administracion?tab=categories');
+  await page.getByRole('button', { name: 'Nueva categoría', exact: true }).click();
+  const d = page.getByRole('dialog'),
+    name = `Categoría E2E ${randomUUID().slice(0, 8)}`;
+  await d.getByLabel('Nombre de la categoría *', { exact: true }).fill(name);
+  const categorySaved = page.waitForResponse(
+    (r) => r.url().endsWith('/api/admin/categories') && r.request().method() === 'POST',
+  );
+  await d.getByRole('button', { name: 'Guardar configuración', exact: true }).click();
+  const category = await (await categorySaved).json();
+  createdConfigCategories.push(category.id);
+  await expect(d).toHaveCount(0);
+  await page.getByRole('button', { name: `Editar categoría ${name}`, exact: true }).click();
+  await d.getByLabel('Nombre de la categoría *', { exact: true }).fill(name + ' revisada');
+  await d.getByRole('button', { name: 'Guardar configuración', exact: true }).click();
+  await expect(d).toHaveCount(0);
+  expect(
+    (await (await page.request.get('/api/inventory/categories')).json()).find(
+      (c: { id: string }) => c.id === category.id,
+    ).name,
+  ).toBe(name + ' revisada');
+  await page.getByRole('button', { name: 'Servicios', exact: true }).click();
+  await page.getByRole('button', { name: 'Nuevo servicio', exact: true }).click();
+  const serviceName = `Consulta E2E ${randomUUID().slice(0, 8)}`;
+  await d.getByLabel('Nombre del servicio *', { exact: true }).fill(serviceName);
+  await d.getByLabel('Duración (minutos) *', { exact: true }).fill('45');
+  await d.getByLabel('Precio del servicio (S/) *', { exact: true }).fill('29.90');
+  const serviceSaved = page.waitForResponse(
+    (r) => r.url().endsWith('/api/admin/services') && r.request().method() === 'POST',
+  );
+  await d.getByRole('button', { name: 'Guardar configuración', exact: true }).click();
+  const service = await (await serviceSaved).json();
+  createdConfigServices.push(service.id);
+  await expect(d).toHaveCount(0);
+  expect(
+    (await (await page.request.get('/api/agenda/options')).json()).services.find(
+      (s: { id: string }) => s.id === service.id,
+    ).durationMinutes,
+  ).toBe(45);
+  await page.getByRole('button', { name: `Editar servicio ${serviceName}`, exact: true }).click();
+  await d.getByLabel('Estado del servicio', { exact: true }).selectOption('false');
+  await d.getByRole('button', { name: 'Guardar configuración', exact: true }).click();
+  await expect(d).toHaveCount(0);
+  await page.getByLabel('Estado de configuración', { exact: true }).selectOption('archived');
+  await page.getByRole('button', { name: `Editar servicio ${serviceName}`, exact: true }).click();
+  await d.getByLabel('Estado del servicio', { exact: true }).selectOption('true');
+  await d.getByLabel('Precio del servicio (S/) *', { exact: true }).fill('39.90');
+  await d.getByRole('button', { name: 'Guardar configuración', exact: true }).click();
+  await expect(d).toHaveCount(0);
+  const items = await (
+    await page.request.get(`/api/sales/items?kind=service&q=${encodeURIComponent(serviceName)}`)
+  ).json();
+  expect(items.find((s: { id: string }) => s.id === service.id).price).toBe('39.90');
+});
+test('cuentas: crea acceso, cambia rol, revoca sesión y permite reactivar al integrante', async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(60000);
+  await login(page);
+  await page.goto('/administracion');
+  await page.getByRole('button', { name: 'Nueva cuenta', exact: true }).click();
+  const d = page.getByRole('dialog'),
+    email = `equipo-e2e-${randomUUID()}@example.invalid`,
+    secret = 'Contraseña ficticia de equipo 2026';
+  await d
+    .getByLabel('Nombre del integrante *', { exact: true })
+    .fill(`Integrante E2E ${randomUUID().slice(0, 8)}`);
+  await d.getByLabel('Correo de acceso *', { exact: true }).fill(email);
+  await d.getByLabel('Contraseña inicial *', { exact: true }).fill(secret);
+  const saved = page.waitForResponse(
+    (r) => r.url().endsWith('/api/admin/users') && r.request().method() === 'POST',
+  );
+  await d.getByRole('button', { name: 'Guardar cuenta', exact: true }).click();
+  const user = await (await saved).json();
+  createdConfigUsers.push(user.id);
+  await expect(d).toHaveCount(0);
+  await page.getByLabel('Buscar integrantes', { exact: true }).fill(email);
+  await page.getByRole('button', { name: 'Buscar', exact: true }).click();
+  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:5173' });
+  try {
+    const staff = await context.newPage();
+    async function enter() {
+      await staff.goto('/');
+      await staff.getByLabel('Correo electrónico', { exact: true }).fill(email);
+      await staff.getByLabel('Contraseña', { exact: true }).fill(secret);
+      await staff.getByRole('button', { name: 'Ingresar', exact: true }).click();
+      await expect(
+        staff.getByRole('heading', { name: 'Todo listo para recibirlos.' }),
+      ).toBeVisible();
+    }
+    await enter();
+    await expect(staff.getByRole('link', { name: 'Reportes', exact: true })).toHaveCount(0);
+    await page.getByRole('button', { name: `Editar cuenta ${email}`, exact: true }).click();
+    await d.getByLabel('Rol del equipo *', { exact: true }).selectOption('veterinarian');
+    await d.getByRole('button', { name: 'Guardar cuenta', exact: true }).click();
+    await expect(d).toHaveCount(0);
+    expect((await staff.request.get('/api/auth/session')).status()).toBe(401);
+    await page.getByRole('button', { name: `Editar cuenta ${email}`, exact: true }).click();
+    await d.getByLabel('Permitir ingreso', { exact: true }).uncheck();
+    await d.getByRole('button', { name: 'Guardar cuenta', exact: true }).click();
+    await expect(d).toHaveCount(0);
+    expect(
+      (await (await page.request.get(`/api/admin/users/${user.id}`)).json()).loginEnabled,
+    ).toBe(false);
+    await page.getByRole('button', { name: `Editar cuenta ${email}`, exact: true }).click();
+    await d.getByLabel('Permitir ingreso', { exact: true }).check();
+    await d.getByRole('button', { name: 'Guardar cuenta', exact: true }).click();
+    await expect(d).toHaveCount(0);
+    await enter();
+    await expect(staff.getByRole('link', { name: 'Ventas', exact: true })).toHaveCount(0);
+    expect((await staff.request.get('/api/sales')).status()).toBe(403);
+  } finally {
+    await context.close();
+  }
+});
+test('administrador conserva su propio acceso y la API rechaza deshabilitarlo', async ({
+  page,
+}) => {
+  await login(page);
+  const session = await (await page.request.get('/api/auth/session')).json();
+  await page.goto('/administracion');
+  await page
+    .getByRole('button', { name: `Editar cuenta ${session.user.email}`, exact: true })
+    .click();
+  const d = page.getByRole('dialog');
+  await expect(d.getByLabel('Rol del equipo *', { exact: true })).toBeDisabled();
+  await expect(d.getByLabel('Cuenta activa', { exact: true })).toBeDisabled();
+  await expect(d.getByLabel('Permitir ingreso', { exact: true })).toBeDisabled();
+  const user = await (await page.request.get(`/api/admin/users/${session.user.id}`)).json();
+  const response = await writeFromBrowser(
+    page,
+    `/api/admin/users/${user.id}`,
+    {
+      name: user.name,
+      role: 'reception',
+      active: true,
+      loginEnabled: true,
+      password: null,
+      version: user.version,
+    },
+    'PUT',
+  );
+  expect(response.status()).toBe(409);
+  expect((await page.request.get('/api/auth/session')).status()).toBe(200);
+});
+test('configuración móvil: conflicto conserva el borrador del servicio y recarga explícitamente', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  const body = {
+    name: `Servicio conflicto ${randomUUID().slice(0, 8)}`,
+    durationMinutes: 30,
+    price: '11.11',
+    active: true,
+  };
+  const response = await writeFromBrowser(page, '/api/admin/services', body);
+  expect(response.status()).toBe(201);
+  const service = await response.json();
+  createdConfigServices.push(service.id);
+  await page.goto(`/administracion?tab=services&q=${encodeURIComponent(service.name)}`);
+  await page.getByRole('button', { name: `Editar servicio ${service.name}`, exact: true }).click();
+  const d = page.getByRole('dialog');
+  await d.getByLabel('Precio del servicio (S/) *', { exact: true }).fill('22.22');
+  expect(
+    (
+      await writeFromBrowser(
+        page,
+        `/api/admin/services/${service.id}`,
+        { ...body, price: '33.33', version: 1 },
+        'PUT',
+      )
+    ).status(),
+  ).toBe(200);
+  await d.getByRole('button', { name: 'Guardar configuración', exact: true }).click();
+  await expect(d.getByRole('alert')).toContainText('Otra persona actualizó este registro');
+  await expect(d.getByLabel('Precio del servicio (S/) *', { exact: true })).toHaveValue('22.22');
+  await d.getByRole('button', { name: 'Recargar ficha actual', exact: true }).click();
+  await expect(d.getByLabel('Precio del servicio (S/) *', { exact: true })).toHaveValue('33.33');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await d.getByRole('button', { name: 'Guardar configuración', exact: true }).click();
+  await expect(d).toHaveCount(0);
+});
+test('negocio: conflicto conserva cambios y guardar actualiza el nombre en la navegación', async ({
+  page,
+}) => {
+  await login(page);
+  const original = await (await page.request.get('/api/admin/business')).json();
+  const external = `NexoVet E2E externo ${randomUUID().slice(0, 8)}`,
+    finalName = `NexoVet E2E ${randomUUID().slice(0, 8)}`;
+  ownedBusinessNames.add(external);
+  ownedBusinessNames.add(finalName);
+  try {
+    await page.goto('/administracion?tab=business');
+    await page
+      .getByLabel('Nombre del negocio *', { exact: true })
+      .fill('Borrador local que debo conservar');
+    expect(
+      (
+        await writeFromBrowser(
+          page,
+          '/api/admin/business',
+          { name: external, address: original.address, version: original.version },
+          'PUT',
+        )
+      ).status(),
+    ).toBe(200);
+    await page.getByRole('button', { name: 'Guardar negocio', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('Otra persona actualizó este registro');
+    await expect(page.getByLabel('Nombre del negocio *', { exact: true })).toHaveValue(
+      'Borrador local que debo conservar',
+    );
+    await page.getByRole('button', { name: 'Recargar ficha actual', exact: true }).click();
+    await expect(page.getByLabel('Nombre del negocio *', { exact: true })).toHaveValue(external);
+    await page.getByLabel('Nombre del negocio *', { exact: true }).fill(finalName);
+    await page.getByRole('button', { name: 'Guardar negocio', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Datos del negocio guardados');
+    await expect(
+      page
+        .getByRole('complementary', { name: 'Navegación principal' })
+        .getByText(finalName, { exact: true }),
+    ).toBeVisible();
+  } finally {
+    const current = await (await page.request.get('/api/admin/business')).json();
+    if (ownedBusinessNames.has(current.name))
+      expect(
+        (
+          await writeFromBrowser(
+            page,
+            '/api/admin/business',
+            { name: original.name, address: original.address, version: current.version },
+            'PUT',
+          )
+        ).status(),
+      ).toBe(200);
+  }
+});
+test('auditoría: encuentra cambios de una categoría y filtra el historial del registro', async ({
+  page,
+}) => {
+  await login(page);
+  const name = `Auditoría E2E ${randomUUID().slice(0, 8)}`,
+    response = await writeFromBrowser(page, '/api/admin/categories', { name });
+  expect(response.status()).toBe(201);
+  const category = await response.json();
+  createdConfigCategories.push(category.id);
+  expect(
+    (
+      await writeFromBrowser(
+        page,
+        `/api/admin/categories/${category.id}`,
+        { name: name + ' revisada', version: 1 },
+        'PUT',
+      )
+    ).status(),
+  ).toBe(200);
+  const options = await (await page.request.get('/api/reports/options')).json();
+  const tomorrow = new Date(Date.parse(options.today + 'T12:00:00Z') + 86400000)
+    .toISOString()
+    .slice(0, 10);
+  await page.goto(`/administracion?tab=audit&q=${category.id}&from=${options.from}&to=${tomorrow}`);
+  await expect(
+    page.getByRole('cell', { name: 'settings.category_updated', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('cell', { name: 'settings.category_created', exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: `Ver historial del registro ${category.id}`, exact: true })
+    .first()
+    .click();
+  await expect(page).toHaveURL(new RegExp(`entityId=${category.id}`));
+  await expect(
+    page.getByRole('button', { name: 'Quitar filtro de registro', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText('password_hash', { exact: false })).toHaveCount(0);
+});
+test('reportes y auditoría: recepción y veterinarios no acceden por URL ni API', async ({
+  page,
+}) => {
+  for (const role of ['reception', 'veterinarian']) {
+    await login(page, role);
+    await expect(
+      page.getByRole('region', { name: 'Indicadores administrativos de hoy', exact: true }),
+    ).toHaveCount(0);
+    await page.goto('/reportes');
+    await expect(
+      page.getByRole('heading', { name: 'Acceso restringido', exact: true }),
+    ).toBeVisible();
+    expect((await page.request.get('/api/reports/operations')).status()).toBe(403);
+    await page.goto('/administracion?tab=audit');
+    await expect(
+      page.getByRole('heading', { name: 'Acceso restringido', exact: true }),
+    ).toBeVisible();
+    expect((await page.request.get('/api/admin/audit')).status()).toBe(403);
+    await logoutUI(page);
+  }
+});
+test('reportes: fallo de lectura y de exportación se muestran y permiten reintentar', async ({
+  page,
+}) => {
+  await login(page);
+  await page.route('**/api/reports/operations?*', (route) =>
+    route.fulfill({ status: 503, json: { message: 'Reportes temporalmente no disponibles' } }),
+  );
+  await page.goto('/reportes');
+  await expect(page.getByRole('alert')).toContainText('Reportes temporalmente no disponibles');
+  await expect(page.getByText('Ventas confirmadas', { exact: true })).toHaveCount(0);
+  await page.unroute('**/api/reports/operations?*');
+  await page.getByRole('button', { name: 'Intentar nuevamente', exact: true }).click();
+  await expect(page.getByText('Ventas confirmadas', { exact: true })).toBeVisible();
+  await page.getByLabel('Reporte desde', { exact: true }).fill('2020-01-01');
+  await page.getByLabel('Reporte hasta', { exact: true }).fill('2026-01-01');
+  await page.getByRole('button', { name: 'Actualizar reporte', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('máximo 366 días');
+  await page.getByLabel('Reporte desde', { exact: true }).fill('2000-01-01');
+  await page.getByLabel('Reporte hasta', { exact: true }).fill('2000-01-01');
+  await page.getByRole('button', { name: 'Actualizar reporte', exact: true }).click();
+  await expect(page.getByText('Ventas confirmadas', { exact: true })).toBeVisible();
+  await page.route('**/api/reports/operations.csv?*', (route) =>
+    route.fulfill({ status: 503, json: { message: 'Exportación no disponible' } }),
+  );
+  await page.getByRole('button', { name: 'Exportar CSV', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Exportación no disponible');
 });

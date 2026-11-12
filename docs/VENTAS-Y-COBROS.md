@@ -34,7 +34,7 @@ S/ 9,999,999,999.99. Las cantidades y el total se validan antes de escribir lín
 El número `V-0000000001` se asigna mediante secuencia y puede tener saltos. Es un
 registro interno; no representa una boleta/factura electrónica ni conexión con
 SUNAT. No calcula impuestos, descuentos ni recargos adicionales. El mantenimiento
-de servicios y sus precios queda para configuración del bloque 9.
+de servicios y sus precios se realiza en la configuración del [bloque 9](REPORTES-Y-ADMINISTRACION.md).
 
 ## Registro de cobros y confirmación
 
@@ -141,5 +141,5 @@ antes de limpiar sus fichas. No ejecutar estas pruebas en datos reales.
 Fuera de alcance: cobros bancarios, crédito, vuelto, devoluciones/reembolsos,
 anulación fiscal, notas de crédito, SUNAT, emisión de PDF/ticket imprimible,
 descuentos, impuestos, cierre/arqueo de caja, conciliación bancaria y varias sedes.
-Los reportes/configuración corresponden al bloque 9; el despliegue operativo,
+Los reportes/configuración se implementan en el [bloque 9](REPORTES-Y-ADMINISTRACION.md); el despliegue operativo,
 respaldos y comprobaciones para datos reales, al 10.

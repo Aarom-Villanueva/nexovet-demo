@@ -10,7 +10,7 @@
 | 6      | Seguimientos, vencimientos y registro manual de contactos            | Implementado; tareas por rol y contactos sin envíos automáticos         |
 | 7      | Inventario, proveedores y recepción de compras                       | Implementado; catálogo, proveedores, compras y ajustes con trazabilidad |
 | 8      | Ventas, registro de cobros y movimientos asociados                   | Implementado; borradores, cobros manuales y salidas transaccionales     |
-| 9      | Indicadores operativos, reportes, configuración y auditoría          | Pendiente; resumen sintético de demostración disponible                 |
+| 9      | Indicadores operativos, reportes, configuración y auditoría          | Implementado; reportes/CSV, ajustes y cuentas con auditoría             |
 | 10     | Pruebas de la operación completa, respaldo/restauración y despliegue | Pendiente; CI y pruebas iniciales disponibles                           |
 
 Primer hito operativo: bloques 1–5, con un usuario autenticado que registra un
@@ -23,5 +23,4 @@ se revisan por rama/pull request antes de integrarlos a `main`.
 
 El primer hito (bloques 1–5) ya permite el recorrido interno completo: crear cliente
 y paciente, reservar cita, registrar llegada, iniciar la consulta con el veterinario
-asignado y cerrarla. El bloque 6 añade seguimiento operativo y registro manual de contactos. El bloque 7 permite abastecer el almacén y consultar sus movimientos. El bloque 8 registra ventas, cobros completos y salidas de stock. Faltan
-reportes/configuración y la verificación del despliegue. No es una reserva pública.
+asignado y cerrarla. El bloque 6 añade seguimiento operativo y registro manual de contactos. El bloque 7 permite abastecer el almacén y consultar sus movimientos. El bloque 8 registra ventas, cobros completos y salidas de stock. El bloque 9 añade reportes, configuración y auditoría. Falta completar respaldo/restauración y verificar el despliegue operativo en el bloque 10. No es una reserva pública.

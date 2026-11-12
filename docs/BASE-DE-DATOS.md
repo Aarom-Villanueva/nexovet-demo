@@ -133,3 +133,12 @@ exige, al confirmar, líneas, suma de pagos igual al total y una salida exacta p
 producto. La API confirma pagos, stock, estado y auditoría en una transacción;
 los servicios no consumen existencias. Contrato y límites en
 [VENTAS-Y-COBROS.md](VENTAS-Y-COBROS.md).
+
+## Ampliación del bloque 9
+
+`008_reports_administration.sql` añade versiones y fechas a negocio, usuarios,
+servicios y categorías, unicidad de nombres e índices de reportes/auditoría.
+Los reportes leen los documentos/libros existentes en una instantánea consistente;
+no guardan copias ni estimaciones de importes o saldos. Los cambios de configuración
+y su auditoría son transaccionales; los cambios de acceso revocan sesiones y enlaces
+previos. Alcance y reglas en [REPORTES-Y-ADMINISTRACION.md](REPORTES-Y-ADMINISTRACION.md).

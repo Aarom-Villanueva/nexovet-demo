@@ -1,0 +1,15 @@
+ALTER TABLE business_settings ADD COLUMN version integer NOT NULL DEFAULT 1 CHECK(version>0);
+ALTER TABLE business_settings ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE users ADD COLUMN version integer NOT NULL DEFAULT 1 CHECK(version>0);
+ALTER TABLE users ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE services ADD COLUMN version integer NOT NULL DEFAULT 1 CHECK(version>0);
+ALTER TABLE services ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE product_categories ADD COLUMN version integer NOT NULL DEFAULT 1 CHECK(version>0);
+ALTER TABLE product_categories ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now();
+CREATE UNIQUE INDEX services_name_folded ON services(lower(name));
+CREATE UNIQUE INDEX categories_name_folded ON product_categories(lower(name));
+CREATE INDEX sales_confirmed_date_idx ON sales(confirmed_at) WHERE status='confirmed';
+CREATE INDEX payments_paid_date_idx ON payments(paid_at);
+CREATE INDEX purchases_received_date_idx ON purchase_orders(received_at) WHERE status='received';
+CREATE INDEX audit_date_idx ON audit_logs(created_at DESC,id DESC);
+CREATE INDEX audit_actor_date_idx ON audit_logs(actor_id,created_at DESC);

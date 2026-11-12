@@ -49,11 +49,25 @@ export async function getDemoOverview(
             'SELECT p.id,p.sku,p.name,p.sale_price::text AS price,s.quantity::text AS stock,p.minimum_stock::text AS "minimumStock" FROM products p JOIN product_stock s ON s.product_id=p.id WHERE p.active ORDER BY p.sku LIMIT 12',
           );
     const tasks = await client.query<DemoOverview['tasks'][number]>(
-      'SELECT t.id,t.title,c.name AS client,t.due_at::text AS "dueAt",t.status FROM follow_up_tasks t JOIN clients c ON c.id=t.client_id WHERE ($1<>\'veterinarian\' OR t.assigned_to=$2::uuid) ORDER BY t.due_at,t.id LIMIT 12',
+      "SELECT t.id,t.title,c.name AS client,t.due_at::text AS \"dueAt\",t.status FROM follow_up_tasks t JOIN clients c ON c.id=t.client_id WHERE t.status='pending' AND ($1<>'veterinarian' OR t.assigned_to=$2::uuid) ORDER BY t.due_at,t.id LIMIT 12",
       [role, userId ?? null],
     );
+    const adminToday =
+      role === 'admin'
+        ? (
+            await client.query<import('@nexovet/shared').TodayIndicators>(
+              `SELECT
+      (SELECT count(*)::int FROM sales WHERE status='confirmed' AND (confirmed_at AT TIME ZONE 'America/Lima')::date=$1::date) AS "confirmedSales",
+      (SELECT coalesce(sum(p.amount),0)::numeric(30,2)::text FROM payments p JOIN sales s ON s.id=p.sale_id WHERE s.status='confirmed' AND (p.paid_at AT TIME ZONE 'America/Lima')::date=$1::date) AS "registeredPayments",
+      (SELECT count(*)::int FROM purchase_orders WHERE status='received' AND (received_at AT TIME ZONE 'America/Lima')::date=$1::date) AS "receivedPurchases",
+      (SELECT count(*)::int FROM products p JOIN product_stock s ON s.product_id=p.id WHERE p.active AND s.quantity<p.minimum_stock) AS "lowStock"`,
+              [today],
+            )
+          ).rows[0]
+        : undefined;
     await client.query('COMMIT');
     return {
+      ...(adminToday ? { adminToday } : {}),
       demo: business.rows[0].is_demo,
       businessName: name,
       today,
