@@ -1,3 +1,0 @@
-0f8e31c0434b34b054bfd7d6ec716183b7482f941b0b3d21d6cb4064555da160  NexoVet-planes-cobertura.zip
-8b5a8e811e78f8c2ee5cb7c649da0b8611b852d4cf0ae774414ee416f9739839  NexoVet-vitrina-planes.zip
-e07134bffbae96a661928bcd4eb840a4fe17bf9319942418742a6f066e1ff684  nexovet-tiktok-demo.mp4
